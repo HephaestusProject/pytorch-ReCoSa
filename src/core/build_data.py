@@ -4,21 +4,23 @@
 
 
 import datetime
-import os
-from os import stat
-import requests
 import hashlib
+import os
 import shutil
 import time
+from os import stat
+from typing import Optional
+
+import requests
 import tqdm
 import yaml
-from typing import Optional
 
 
 class Config:
     """
     yaml parser
     """
+
     def __init__(self) -> None:
         pass
 
@@ -61,6 +63,7 @@ class DownloadableFile:
                 )
             else:
                 print("[ Checksum Successful ]")
+
 
 def download(url, path: str, fname: str, redownload: str = False) -> None:
     """
@@ -153,6 +156,7 @@ def move(path1: str, path2: str) -> None:
     """Rename the given file."""
     shutil.move(path1, path2)
 
+
 def built(path: str, version_string: str = Optional[None]) -> bool:
     """
     Check if '.built' flag has been set for that task.
@@ -160,21 +164,23 @@ def built(path: str, version_string: str = Optional[None]) -> bool:
     is regarded as not built.
     """
     if version_string:
-        fname = os.path.join(path, '.built')
+        fname = os.path.join(path, ".built")
         if not os.path.isfile(fname):
             return False
         else:
-            with open(fname, 'r') as read:
-                text = read.read().split('\n')
+            with open(fname, "r") as read:
+                text = read.read().split("\n")
             return len(text) > 1 and text[1] == version_string
     else:
-        return os.path.isfile(os.path.join(path, '.built'))
+        return os.path.isfile(os.path.join(path, ".built"))
+
 
 def make_dir(path: str) -> None:
     """Make the directory and any nonexistent parent directories (`mkdir -p`)."""
     # the current working directory is a fine path
-    if path != '':
+    if path != "":
         os.makedirs(path, exist_ok=True)
+
 
 def mark_done(path: str, version_string: str = Optional[None]) -> None:
     """
@@ -186,10 +192,11 @@ def mark_done(path: str, version_string: str = Optional[None]) -> None:
     :param str version_string:
         The version of this dataset.
     """
-    with open(os.path.join(path, '.built'), 'w') as write:
+    with open(os.path.join(path, ".built"), "w") as write:
         write.write(str(datetime.datetime.today()))
         if version_string:
-            write.write('\n' + version_string)
+            write.write("\n" + version_string)
+
 
 def untar(path: str, fname: str, deleteTar: bool = True) -> None:
     """
@@ -201,11 +208,12 @@ def untar(path: str, fname: str, deleteTar: bool = True) -> None:
     :param bool deleteTar:
         If true, the archive will be deleted after extraction.
     """
-    print('unpacking ' + fname)
+    print("unpacking " + fname)
     fullpath = os.path.join(path, fname)
     shutil.unpack_archive(fullpath, path)
     if deleteTar:
         os.remove(fullpath)
+
 
 if __name__ == "__main__":
     pass

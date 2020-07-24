@@ -10,8 +10,9 @@
 """
 
 import argparse
-from logging import getLogger
 import os
+from logging import getLogger
+
 import src.core.build_data as build_data
 from src.core.build_data import Config, DownloadableFile
 
@@ -19,14 +20,14 @@ logger = getLogger(__name__)
 
 
 def build(opt: dict):
-    logger.debug('Read Config')
-    config = Config.parse(opt['config'])
+    logger.debug("Read Config")
+    config = Config.parse(opt["config"])
 
-    dpath = os.path.join(config['root'], config['target'])
+    dpath = os.path.join(config["root"], config["target"])
     version = None
-    resources = [DownloadableFile(**config['curl'])]
+    resources = [DownloadableFile(**config["curl"])]
 
-    logger.debug('Check built')
+    logger.debug("Check built")
     if not build_data.built(dpath, version_string=version):
         print("[building data: " + dpath + "]")
         if build_data.built(dpath):
@@ -38,11 +39,11 @@ def build(opt: dict):
         for downloadable_file in resources:
             downloadable_file.download_file(dpath)
 
-        build_data.untar(dpath, config['curl']['file_name'])
+        build_data.untar(dpath, config["curl"]["file_name"])
 
         # Mark the data as built.
         build_data.mark_done(dpath, version_string=version)
-    logger.debug('Done')
+    logger.debug("Done")
 
 
 if __name__ == "__main__":
@@ -51,7 +52,8 @@ if __name__ == "__main__":
         "--config_path",
         help="config path",
         type=str,
-        default="./conf/dataset/ubuntu.yml")
+        default="./conf/dataset/ubuntu.yml",
+    )
 
     args = parser.parse_args()
     build({"config": args.config_path})
