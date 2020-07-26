@@ -18,6 +18,12 @@ class TestConifg(unittest.TestCase):
             list(down_file.__dict__.keys()), ["url", "file_name", "hashcode"]
         )
 
+    def test_root(self):
+        self.assertEqual(self.config["root"], "./data/")
+
+    def test_target(self):
+        self.assertEqual(self.config["target"], "Ubuntu")
+
 
 if __name__ == "__main__":
     unittest.main()
