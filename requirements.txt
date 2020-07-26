@@ -1,4 +1,7 @@
 pytest
 pyyaml
 requests
+torch==1.5.1
+pytorch-lightning==0.8.5
 tqdm
+transformers==3.0.2
