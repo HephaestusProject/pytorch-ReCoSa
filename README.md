@@ -9,7 +9,7 @@
 
 ## Table
 
-* Ubuntu Datset2.0
+* Ubuntu Dataset2.0
 
 | PPL   |      BLEU      |
 |----------|:-------------:|
