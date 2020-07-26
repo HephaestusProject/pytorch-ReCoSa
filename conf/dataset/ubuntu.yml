@@ -1,0 +1,22 @@
+# Copyright (c) HephaestusProject
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+# This your_mode.yml was made by soeque1 at 24/07/20.
+# writing configuration of your dataset.
+
+root: ./data/
+target: Ubuntu
+curl:
+    url: http://parl.ai/downloads/ubuntu/ubuntu.tar.gz
+    file_name: ubuntu.tar.gz
+    hashcode: 87caf297381287247cbff3aa7cc2f4609f3b12c40e8535688168d7413740e0d0
+raw:
+    train: train.csv
+    val: valid.csv
+    test: test.csv
+refinement:
+    folder: preprocessed
+    train: train.csv
+    val: valid.csv
+    test: test.csv

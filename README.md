@@ -1,18 +1,19 @@
 # template
 
-[![Code Coverage](https://codecov.io/gh/HephaestusProject/template/branch/master/graph/badge.svg)](https://codecov.io/gh/HephaestusProject/template)
+[![Code Coverage](https://codecov.io/gh/HephaestusProject/pytorch-ReCoSa/branch/master/graph/badge.svg)](https://codecov.io/gh/HephaestusProject/pytorch-ReCoSa)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## Abstract
 
-* abstract의 내용을 넣어주세요.
+* ReCoSA is able to detect relevant contexts and produce a suitable response accordingly. Firstly, a word level LSTM encoder is conducted to obtain the initial representation of each context. Then, the self-attention mechanism is utilized to update both the context and masked response representation. Finally, the attention weights between each context and response representations are computed and used in the further decoding process.
 
 ## Table
 
-* 구현하는 paper에서 제시하는 benchmark dataset을 활용하여 구현하여, 논문에서 제시한 성능과 비교합니다.
-  + benchmark dataset은 하나만 골라주세요.
-    1. 논문에서 제시한 hyper-parameter와 architecture로 재현을 합니다.
-    2. 만약 재현이 안된다면, 본인이 변경한 사항을 서술해주세요.
+* Ubuntu Datset2.0
+
+| PPL   |      BLEU      |
+|----------|:-------------:|
+| 96.057 |  1.6485 |
 
 ## Training history
 
@@ -42,7 +43,41 @@
 
 ### Project structure
 
-* 터미널에서 tree커맨드 찍어서 붙이세요.
+```
+.
+├── apply.sh
+├── conf
+│   ├── dataset
+│   │   └── ubuntu.yml
+│   └── model
+│       └── your_model.yml
+├── data
+│   └── Ubuntu
+│       ├── LICENSE
+│       ├── test.csv
+│       ├── train.csv
+│       └── valid.csv
+├── evaluate.py
+├── infer.py
+├── LICENSE
+├── README.md
+├── requirements.txt
+├── src
+│   ├── core
+│   │   └── build_data.py
+│   ├── data.py
+│   ├── metric.py
+│   ├── model
+│   │   ├── net.py
+│   │   └── ops.py
+│   ├── utils
+│   │   └── prepare.py
+│   └── utils.py
+├── tests
+│   ├── __init__.py
+│   └── test_download.py
+└── train.py
+```
 
 ### License
 
