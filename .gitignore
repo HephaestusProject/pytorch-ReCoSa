@@ -120,3 +120,6 @@ events.out.tfevents.*
 
 # data
 data
+
+# vscode
+.vscode
