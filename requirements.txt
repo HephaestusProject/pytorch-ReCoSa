@@ -1,5 +1,5 @@
 pytest
-pyyaml
+pyyaml==5.3.1
 requests
 torch==1.5.1
 pytorch-lightning==0.8.5
