@@ -1,5 +1,6 @@
-import pytest
 import unittest
+
+import pytest
 
 from src.core.build_data import Config, DownloadableFile
 from src.utils.prepare import build
@@ -29,7 +30,6 @@ class TestConifg(unittest.TestCase):
     @pytest.mark.skip(reason="The test-data file to be changed")
     def test_download(self):
         build({"config": "./conf/dataset/ubuntu.yml", "version": "test"})
-
 
 
 if __name__ == "__main__":

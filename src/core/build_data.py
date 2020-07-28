@@ -20,6 +20,7 @@ class Config:
     """
     yaml parser
     """
+
     @staticmethod
     def parse(cpath: str) -> dict:
         with open(cpath) as f:

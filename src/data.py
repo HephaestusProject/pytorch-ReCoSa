@@ -9,12 +9,11 @@
 
 import csv
 import random
+from typing import Callable, List, Tuple
+
 import torch
 from torch.autograd import Variable
-from torch.utils.data import Dataset
-from torch.utils.data import DataLoader
-from typing import Tuple, List, Callable
-
+from torch.utils.data import DataLoader, Dataset
 from transformers import BertModel, BertTokenizer
 
 
@@ -35,7 +34,7 @@ def dataload(_path: str) -> List[str]:
                 cands = [fields[i] for i in range(2, len(fields))]
                 cands.append(response)
                 random.shuffle(cands)
-            data.append({'context': context, 'response': response, 'cands': cands})
+            data.append({"context": context, "response": response, "cands": cands})
     return data
 
 
@@ -51,20 +50,27 @@ class UbuntuDataSet(Dataset):
         """
         self._path = folderpath + "/" + filepath
         self._corpus = dataload(self._path)
-        self._tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", unk_token="<|unkwn|>")
+        self._tokenizer = BertTokenizer.from_pretrained(
+            "bert-base-uncased", unk_token="<|unkwn|>"
+        )
         self.max_length = 50
 
     def __len__(self) -> int:
         return len(self._corpus)
 
     def encode_fn(self, _input: str) -> List[int]:
-        return self._tokenizer.encode(_input, add_special_tokens=False, max_length=self.max_length, pad_to_max_length=True)
+        return self._tokenizer.encode(
+            _input,
+            add_special_tokens=False,
+            max_length=self.max_length,
+            pad_to_max_length=True,
+        )
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         dataset = self._corpus[idx]
-        ctx = self.encode_fn(dataset['context'])
-        response = self.encode_fn(dataset['response'])
-        cands = [self.encode_fn(i) for i in dataset['cands']]
+        ctx = self.encode_fn(dataset["context"])
+        response = self.encode_fn(dataset["response"])
+        cands = [self.encode_fn(i) for i in dataset["cands"]]
         return (ctx, response, cands)
 
 
@@ -74,13 +80,15 @@ class UbuntuDataLoader(DataLoader):
 
 
 class Tokenizer(BertTokenizer):
-    def __init__(self, vocab_file:str, *args, **kwargs):
+    def __init__(self, vocab_file: str, *args, **kwargs):
         super(Tokenizer, self).__init__(vocab_file, *args, **kwargs)
+
     # vocab_files_names = {"vocab_file": "vocab.txt"}
     # pretrained_vocab_files_map = {"vocab_file": {"bert-base-uncased": "https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-vocab.txt"}}
     # max_model_input_sizes = {"bert-base-uncased": 512}
     # pretrained_init_configuration = {"bert-base-uncased": {"do_lower_case": True}}
     # model_input_names = ["attention_mask"]
+
 
 def collate(examples):
     return list(map(torch.LongTensor, zip(*examples)))
