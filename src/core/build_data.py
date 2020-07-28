@@ -21,9 +21,6 @@ class Config:
     yaml parser
     """
 
-    def __init__(self) -> None:
-        pass
-
     @staticmethod
     def parse(cpath: str) -> dict:
         with open(cpath) as f:
