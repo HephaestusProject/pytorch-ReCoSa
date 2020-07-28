@@ -1,3 +1,4 @@
+import pytest
 import unittest
 
 from src.core.build_data import Config, DownloadableFile
@@ -25,6 +26,7 @@ class TestConifg(unittest.TestCase):
     def test_target(self):
         self.assertEqual(self.config["target"], "Ubuntu")
 
+    @pytest.mark.skip(reason="The test-data file to be changed")
     def test_download(self):
         build({"config": "./conf/dataset/ubuntu.yml", "version": "test"})
 
