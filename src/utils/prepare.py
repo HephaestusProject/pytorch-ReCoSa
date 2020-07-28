@@ -24,11 +24,10 @@ def build(opt: dict):
     config = Config.parse(opt["config"])
 
     dpath = os.path.join(config["root"], config["target"])
-    version = None
     resources = [DownloadableFile(**config["curl"])]
 
     logger.debug("Check built")
-    if not build_data.built(dpath, version_string=version):
+    if not build_data.built(dpath, version_string=opt["version"]):
         print("[building data: " + dpath + "]")
         if build_data.built(dpath):
             # An older version exists, so remove these outdated files.
@@ -42,7 +41,7 @@ def build(opt: dict):
         build_data.untar(dpath, config["curl"]["file_name"])
 
         # Mark the data as built.
-        build_data.mark_done(dpath, version_string=version)
+        build_data.mark_done(dpath, version_string=opt["version"])
     logger.debug("Done")
 
 
@@ -56,4 +55,4 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    build({"config": args.config_path})
+    build({"config": args.config_path, "version": None})

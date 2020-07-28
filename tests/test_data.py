@@ -10,7 +10,7 @@ class TestDataSet(unittest.TestCase):
         self.data = UbuntuDataSet('./' + 'tests/resources/', 'sample.csv')
         self.batch_size = 2
         self.cands_len = 10
-        self.seq_len = 20
+        self.seq_len = 50
 
     def test_dataset(self):
         dataloader = UbuntuDataLoader(self.data, batch_size=2, shuffle=False, num_workers=1, collate_fn=collate)

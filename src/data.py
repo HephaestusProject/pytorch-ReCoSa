@@ -51,12 +51,21 @@ class UbuntuDataSet(Dataset):
         """
         self._path = folderpath + "/" + filepath
         self._corpus = dataload(self._path)
+        self._tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", unk_token="<|unkwn|>")
+        self.max_length = 50
 
     def __len__(self) -> int:
         return len(self._corpus)
 
+    def encode_fn(self, _input: str) -> List[int]:
+        return self._tokenizer.encode(_input, add_special_tokens=False, max_length=self.max_length, pad_to_max_length=True)
+
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        return self._corpus[idx]
+        dataset = self._corpus[idx]
+        ctx = self.encode_fn(dataset['context'])
+        response = self.encode_fn(dataset['response'])
+        cands = [self.encode_fn(i) for i in dataset['cands']]
+        return (ctx, response, cands)
 
 
 class UbuntuDataLoader(DataLoader):
@@ -73,41 +82,8 @@ class Tokenizer(BertTokenizer):
     # pretrained_init_configuration = {"bert-base-uncased": {"do_lower_case": True}}
     # model_input_names = ["attention_mask"]
 
-# TODO: Refactor
-tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", unk_token="<|unkwn|>")
-
-# TODO: Move to Dataset
 def collate(examples):
-    # examples: B X 3
-    ctx = [
-        tokenizer.encode(
-            example['context'], add_special_tokens=False, max_length=20, pad_to_max_length=True
-        )
-        for example in examples
-    ]
-    response = [
-        tokenizer.encode(
-            example['response'], add_special_tokens=False, max_length=20, pad_to_max_length=True
-        )
-        for example in examples
-    ]
-
-    cands = []
-    for example in examples:
-        tokenized = []
-        for ex_cands in example['cands']:
-            tokenized.append(tokenizer.encode(
-            ex_cands, add_special_tokens=False, max_length=20, pad_to_max_length=True
-        ))
-        cands.append(tokenized)
-    # B X S
-    ctx = torch.tensor(ctx)
-    # B X S
-    response = torch.tensor(response)
-    # B X C * S
-    cands = torch.tensor(cands)
-
-    return ctx, response, cands
+    return list(map(torch.LongTensor, zip(*examples)))
 
 
 if __name__ == "__main__":
