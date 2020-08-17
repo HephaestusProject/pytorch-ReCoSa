@@ -11,7 +11,6 @@ class TestDataSet(unittest.TestCase):
         self.config = Config.parse("./conf/dataset/ubuntu.yml")
         self.data = UbuntuDataSet("./" + "tests/resources/", "sample.csv")
         self.batch_size = 2
-        self.cands_len = 10
         self.seq_len = 50
 
     def test_dataset(self):
@@ -24,7 +23,7 @@ class TestDataSet(unittest.TestCase):
                 response.shape, torch.Size([self.batch_size, self.seq_len])
             )
             self.assertEqual(
-                cands.shape, torch.Size([self.batch_size, self.cands_len, self.seq_len])
+                cands.shape, torch.Size([self.batch_size, self.seq_len])
             )
             break
 

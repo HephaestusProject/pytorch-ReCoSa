@@ -27,8 +27,8 @@ def dataload(_path: str) -> List[str]:
             fields = [
                 s.replace("__eou__", ".").replace("__eot__", "\n").strip() for s in line
             ]
-            context = fields[0]
-            response = fields[1]
+            context = fields[0].strip() #[i.strip() for i in fields[0].split('\n')]
+            response = fields[1].strip()
             cands = None
             if len(fields) > 3:
                 cands = [fields[i] for i in range(2, len(fields))]
@@ -66,11 +66,17 @@ class UbuntuDataSet(Dataset):
             pad_to_max_length=True,
         )
 
+    def get_cands_for_retreival(self, cands: list):
+        return [self.encode_fn(i) for i in cands]
+
+    def get_cands_for_generation(self, cands: list):
+        return self.encode_fn(cands[0])
+
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         dataset = self._corpus[idx]
         ctx = self.encode_fn(dataset["context"])
         response = self.encode_fn(dataset["response"])
-        cands = [self.encode_fn(i) for i in dataset["cands"]]
+        cands = self.get_cands_for_generation(dataset["cands"])
         return (ctx, response, cands)
 
 
