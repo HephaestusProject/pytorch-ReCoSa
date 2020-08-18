@@ -16,6 +16,8 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
 from transformers import BertModel, BertTokenizer
 
+from src.core.build_data import Config
+
 
 def dataload(_path: str) -> List[str]:
     data = []
@@ -27,7 +29,7 @@ def dataload(_path: str) -> List[str]:
             fields = [
                 s.replace("__eou__", ".").replace("__eot__", "\n").strip() for s in line
             ]
-            context = fields[0].strip() #[i.strip() for i in fields[0].split('\n')]
+            context = fields[0].replace('\n', '[SEP]').strip() # [i.strip() for i in fields[0].split('\n')]
             response = fields[1].strip()
             cands = None
             if len(fields) > 3:
@@ -50,10 +52,12 @@ class UbuntuDataSet(Dataset):
         """
         self._path = folderpath + "/" + filepath
         self._corpus = dataload(self._path)
+        self._config = Config.parse("./conf/model/ReCoSa.yml")
         self._tokenizer = BertTokenizer.from_pretrained(
             "bert-base-uncased", unk_token="<|unkwn|>"
         )
-        self.max_length = 50
+        self.max_length = self._config['max_seq']
+        self.vocab_size = len(self._tokenizer)
 
     def __len__(self) -> int:
         return len(self._corpus)

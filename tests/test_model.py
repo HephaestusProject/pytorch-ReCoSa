@@ -9,10 +9,14 @@ class TestDATA:
     """TestDATA
     """
     # batch, turn, seq_len
-    ctx = torch.tensor([[[3087,  4282,  2339,  2026,  4518], [1045,  2275,  2039,  2026, 10751]]])
+    ctx = torch.tensor([[[3087,  4282,  2339,  2026,  4518]], [[1045,  2275,  2039,  2026, 10751]]])
     # batch, seq_len
     response = torch.tensor([[3087,  4282,  2339,  2026,  4518]])
     dec_input = torch.rand([5, 1, 256])
+
+    assert ctx.shape == torch.Size([2, 1, 5])
+    assert response.shape == torch.Size([1, 5])
+    assert dec_input.shape == torch.Size([5, 1, 256])
 
 
 class TestCtxEncoder(unittest.TestCase):
@@ -49,7 +53,7 @@ class TestCtxEncoder(unittest.TestCase):
                 pass
 
     def test_input(self):
-        self.assertEqual(self.data.ctx.shape, torch.Size([1, 2, 5]))
+        self.assertEqual(self.data.ctx.shape, torch.Size([2, 1, 5]))
 
     def test_forward_enc(self):
         output = self.enc(self.data.ctx.to(self.device))
@@ -76,7 +80,7 @@ class TestResponseEncoder(unittest.TestCase):
 
     def test_forward_enc(self):
         output = self.enc(self.data.response.to(self.device))
-        self.assertEqual(output.shape, torch.Size([self.data.response.shape[0], self.data.response.shape[-1],  self.hidden_size]))
+        self.assertEqual(output.shape, torch.Size([self.data.response.shape[-1], self.data.response.shape[0],  self.hidden_size]))
 
 
 class TestDecoder(unittest.TestCase):
@@ -114,7 +118,7 @@ class TestReCoSa(unittest.TestCase):
 
     def test_forward_recosa(self):
         res = self.recosa(self.data.ctx.to(self.device), self.data.response.to(self.device))
-        self.assertEqual(res.shape, torch.Size([self.data.ctx.size()[0], self.data.ctx.size()[-1], self.config['vocab_size']]))
+        self.assertEqual(res.shape, torch.Size([self.data.ctx.size()[1], self.data.ctx.size()[-1], self.config['vocab_size']]))
 
 
 if __name__ == "__main__":

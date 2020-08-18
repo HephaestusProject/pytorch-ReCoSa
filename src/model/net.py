@@ -75,7 +75,7 @@ class EncoderCtxModule(nn.Module):
         self.embed_size = embed_size
         self.out_size = out_size
 
-        self.emb = nn.Embedding(vocab_size, embed_size)
+        self.emb = nn.Embedding(vocab_size, embed_size, padding_idx=0)
         self.rnn = nn.LSTM(embed_size, hidden_size, self.n_layers, dropout=0.1)
         self.position_embeddings = PositionEmbedding(hidden_size)
         self.self_attention_context = nn.MultiheadAttention(hidden_size, 8)
@@ -136,7 +136,7 @@ class EncoderResponseModule(nn.Module):
         super(EncoderResponseModule, self).__init__()
         self.device = _device
         self.hidden_size = hidden_size
-        self.emb = nn.Embedding(vocab_size, hidden_size)
+        self.emb = nn.Embedding(vocab_size, hidden_size, padding_idx=0)
         self.position_embeddings = PositionEmbedding(hidden_size)
         self.self_attention = nn.MultiheadAttention(hidden_size, 8)
         self.init_w()
@@ -191,7 +191,7 @@ class DecoderModule(nn.Module):
         **kwargs
     ) -> None:
         super(DecoderModule, self).__init__()
-        self.embed = nn.Embedding(output_size, embed_size)
+        self.embed = nn.Embedding(output_size, embed_size, padding_idx=0)
         self.self_attention = nn.MultiheadAttention(hidden_size, 8)
         self.layer_norm1 = nn.LayerNorm(hidden_size)
         self.linear1 = nn.Linear(hidden_size, out_size)
@@ -247,9 +247,10 @@ class ReCoSA(nn.Module):
     def forward(self, ctx, response):
         enc_ctx = self.encoderCtx(ctx)
         enc_res = self.encoderResponse(response)
+        # seq_len, batch, vocab_size
         dec_res = self.decoder(query=enc_res, key=enc_ctx, value=enc_ctx)
-        dec_res = dec_res.transpose(0, 1)
-        # batch, seq_len, vocab_size
+        # batch, vocab_size, seq_len
+        dec_res = dec_res.permute(1, 2, 0)
         return dec_res
 
 
