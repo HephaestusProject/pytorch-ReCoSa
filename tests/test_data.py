@@ -22,9 +22,7 @@ class TestDataSet(unittest.TestCase):
             self.assertEqual(
                 response.shape, torch.Size([self.batch_size, self.seq_len])
             )
-            self.assertEqual(
-                cands.shape, torch.Size([self.batch_size, self.seq_len])
-            )
+            self.assertEqual(cands.shape, torch.Size([self.batch_size, self.seq_len]))
             break
 
 

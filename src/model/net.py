@@ -5,13 +5,13 @@
 
 import math
 import random
-import torch
+from typing import List, Optional
+
 import pytorch_lightning
+import torch
 from torch import dropout, nn, tensor
 from torch.functional import Tensor
 from torch.nn import init
-from typing import List, Optional
-
 
 SEED_NUM = 777
 initrange = 0.1

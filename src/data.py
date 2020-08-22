@@ -29,7 +29,9 @@ def dataload(_path: str) -> List[str]:
             fields = [
                 s.replace("__eou__", ".").replace("__eot__", "\n").strip() for s in line
             ]
-            context = fields[0].replace('\n', '[SEP]').strip() # [i.strip() for i in fields[0].split('\n')]
+            context = (
+                fields[0].replace("\n", "[SEP]").strip()
+            )  # [i.strip() for i in fields[0].split('\n')]
             response = fields[1].strip()
             cands = None
             if len(fields) > 3:
@@ -56,7 +58,7 @@ class UbuntuDataSet(Dataset):
         self._tokenizer = BertTokenizer.from_pretrained(
             "bert-base-uncased", unk_token="<|unkwn|>"
         )
-        self.max_length = self._config['max_seq']
+        self.max_length = self._config["max_seq"]
         self.vocab_size = len(self._tokenizer)
 
     def __len__(self) -> int:
