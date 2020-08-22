@@ -211,7 +211,9 @@ class DecoderModule(nn.Module):
 
 class ReCoSA(nn.Module):
     def __init__(self, config: dict, _device: torch.device) -> None:
-        import pdb; pdb.set_trace()
+        import pdb
+
+        pdb.set_trace()
         super().__init__()
         self.encoderCtx = EncoderCtxModule(
             vocab_size=config["vocab_size"],
