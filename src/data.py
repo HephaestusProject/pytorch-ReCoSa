@@ -103,6 +103,7 @@ class Tokenizer(BertTokenizer):
 
 
 def collate(examples):
+    # TODO: max_turn, turn 별로 padding 다시 처리
     return list(map(torch.LongTensor, zip(*examples)))
 
 

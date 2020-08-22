@@ -210,7 +210,8 @@ class DecoderModule(nn.Module):
 
 
 class ReCoSA(nn.Module):
-    def __init__(self, config, _device):
+    def __init__(self, config: dict, _device: torch.device) -> None:
+        import pdb; pdb.set_trace()
         super().__init__()
         self.encoderCtx = EncoderCtxModule(
             vocab_size=config["vocab_size"],
@@ -244,7 +245,7 @@ class ReCoSA(nn.Module):
         self.encoderResponse.init_w()
         self.decoder.init_w()
 
-    def forward(self, ctx, response):
+    def forward(self, ctx: torch.Tensor, response: torch.Tensor):
         enc_ctx = self.encoderCtx(ctx)
         enc_res = self.encoderResponse(response)
         # seq_len, batch, vocab_size
@@ -252,6 +253,9 @@ class ReCoSA(nn.Module):
         # batch, vocab_size, seq_len
         dec_res = dec_res.permute(1, 2, 0)
         return dec_res
+
+    def predict(self, ctx: torch.Tensor, response: torch.Tensor):
+        assert NotImplementedError
 
 
 if __name__ == "__main__":
