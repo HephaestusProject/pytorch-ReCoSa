@@ -180,8 +180,8 @@ class TestReCoSa(unittest.TestCase):
             torch.Size(
                 [
                     self.data.ctx.size()[1],
-                    self.data.ctx.size()[-1],
                     self.config["vocab_size"],
+                    self.data.ctx.size()[-1],
                 ]
             ),
         )
