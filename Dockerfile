@@ -32,7 +32,3 @@ RUN echo $PATH
 
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
-
-RUN git clone https://github.com/NVIDIA/apex && cd apex && \
-    TORCH_CUDA_ARCH_LIST="6.1;7.0" pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" ./ && \
-    cd .. && rm -rf apex

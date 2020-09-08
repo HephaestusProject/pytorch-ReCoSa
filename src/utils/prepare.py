@@ -43,6 +43,7 @@ def build(opt: dict):
         # Mark the data as built.
         build_data.mark_done(dpath, version_string=opt["version"])
     logger.debug("Done")
+    return config
 
 
 if __name__ == "__main__":

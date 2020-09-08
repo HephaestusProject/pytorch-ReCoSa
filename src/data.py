@@ -55,9 +55,7 @@ class UbuntuDataSet(Dataset):
         self._path = folderpath + "/" + filepath
         self._corpus = dataload(self._path)
         self._config = Config.parse("./conf/model/ReCoSa.yml")
-        self._tokenizer = BertTokenizer.from_pretrained(
-            "bert-base-uncased", unk_token="<|unkwn|>"
-        )
+        self._tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
         self.max_length = self._config["max_seq"]
         self.vocab_size = len(self._tokenizer)
 
@@ -67,22 +65,23 @@ class UbuntuDataSet(Dataset):
     def encode_fn(self, _input: str) -> List[int]:
         return self._tokenizer.encode(
             _input,
-            add_special_tokens=False,
+            add_special_tokens=True,
             max_length=self.max_length,
             pad_to_max_length=True,
+            truncation=True
         )
 
-    def get_cands_for_retreival(self, cands: list):
-        return [self.encode_fn(i) for i in cands]
+    def get_cands_for_retreival(self, dataset: dict):
+        return [self.encode_fn(i) for i in dataset["cands"]]
 
-    def get_cands_for_generation(self, cands: list):
-        return self.encode_fn(cands[0])
+    def get_cands_for_generation(self, dataset: dict):
+        return self.encode_fn(dataset["response"])
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         dataset = self._corpus[idx]
         ctx = self.encode_fn(dataset["context"])
         response = self.encode_fn(dataset["response"])
-        cands = self.get_cands_for_generation(dataset["cands"])
+        cands = self.get_cands_for_generation(dataset)
         return (ctx, response, cands)
 
 
@@ -104,6 +103,10 @@ class Tokenizer(BertTokenizer):
 
 def collate(examples):
     # TODO: max_turn, turn 별로 padding 다시 처리
+    try:
+        abc = list(map(torch.LongTensor, zip(*examples)))
+    except TypeError:
+        print(examples)
     return list(map(torch.LongTensor, zip(*examples)))
 
 

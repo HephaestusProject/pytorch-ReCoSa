@@ -1,7 +1,6 @@
 import unittest
-
+import pytest
 import torch
-
 from src.core.build_data import Config
 from src.model.net import DecoderModule, EncoderCtxModule, EncoderResponseModule, ReCoSA
 
@@ -113,9 +112,9 @@ class TestResponseEncoder(unittest.TestCase):
             self.enc.self_attention.in_proj_weight[0, :5].tolist(),
             [
                 -0.08361693471670151,
-                -0.0017725080251693726,
-                -0.01934133470058441,
-                -0.022816017270088196,
+                -0.00177251105196774,
+                -0.01934133842587471,
+                -0.022816015407443047,
                 0.07626446336507797,
             ],
         )
@@ -185,6 +184,11 @@ class TestReCoSa(unittest.TestCase):
                 ]
             ),
         )
+
+    @pytest.mark.skip(reason="To be trained.")
+    def test_predict_recosa(self):
+        res = self.recosa.predict(self.data.ctx.to(self.device))
+        self.assertEqual(res, '')
 
 
 if __name__ == "__main__":

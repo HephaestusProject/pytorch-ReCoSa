@@ -212,6 +212,10 @@ class DecoderModule(nn.Module):
 class ReCoSA(nn.Module):
     def __init__(self, config: dict, _device: torch.device) -> None:
         super().__init__()
+        from transformers import BertTokenizer
+        self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+
+        self._device = _device
         self.encoderCtx = EncoderCtxModule(
             vocab_size=config["vocab_size"],
             embed_size=config["embed_size"],
@@ -253,8 +257,24 @@ class ReCoSA(nn.Module):
         dec_res = dec_res.permute(1, 2, 0)
         return dec_res
 
-    def predict(self, ctx: torch.Tensor, response: torch.Tensor):
-        assert NotImplementedError
+    def inference(self, ctx: torch.Tensor, response: torch.Tensor):
+        res = self.forward(ctx, response)
+        return torch.argmax(res[0, :, 0])
+
+    def predict(self, ctx: torch.Tensor):
+        bos_token_id = 101
+        eos_token_id = 102
+        res = torch.tensor([[bos_token_id]]).to(self._device)
+        answer = ''
+        for _ in range(10):
+            res = self.inference(
+                ctx, res
+            )
+            if res.tolist() == eos_token_id:
+                break
+            res = res.unsqueeze(0).unsqueeze(0)
+            answer += self.tokenizer.decode(res)
+        return answer
 
 
 if __name__ == "__main__":
