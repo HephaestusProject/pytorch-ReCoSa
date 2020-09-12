@@ -13,9 +13,6 @@ from torch import dropout, nn, tensor
 from torch.functional import Tensor
 from torch.nn import init
 
-SEED_NUM = 777
-initrange = 0.1
-
 
 class PositionEmbedding(nn.Module):
 
@@ -86,7 +83,6 @@ class EncoderCtxModule(nn.Module):
         self.device = _device
 
     def init_w(self):
-        pytorch_lightning.seed_everything(SEED_NUM)
         self.init_lstm()
 
     def init_lstm(self):
@@ -127,8 +123,7 @@ class EncoderCtxModule(nn.Module):
 
 
 class EncoderResponseModule(nn.Module):
-    """EncoderResponseModule
-    """
+    """EncoderResponseModule"""
 
     def __init__(
         self, vocab_size: int, hidden_size: int, _device: torch.device, *args, **kwargs
@@ -142,7 +137,7 @@ class EncoderResponseModule(nn.Module):
         self.init_w()
 
     def init_w(self):
-        pytorch_lightning.seed_everything(SEED_NUM)
+        initrange = 0.1
         self.self_attention.in_proj_weight.data.uniform_(-initrange, initrange)
 
     def _generate_square_subsequent_mask(self, sz):
@@ -200,7 +195,7 @@ class DecoderModule(nn.Module):
         self.device = _device
 
     def init_w(self):
-        pytorch_lightning.seed_everything(SEED_NUM)
+        pass
 
     def forward(self, key, query, value):
         output, _ = self.self_attention(query, key, value)
@@ -243,7 +238,6 @@ class ReCoSA(nn.Module):
         self.init()
 
     def init(self):
-        pytorch_lightning.seed_everything(SEED_NUM)
         self.encoderCtx.init_w()
         self.encoderResponse.init_w()
         self.decoder.init_w()
