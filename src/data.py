@@ -90,7 +90,7 @@ class UbuntuDataSet(Dataset):
         dataset = self._corpus[idx]
         ctx = self.get_ctx(dataset["context"])
         response = self.encode_fn(dataset["response"])
-        cands = self.get_cands_for_generation(dataset)
+        cands = self.get_cands_for_generation(dataset["cands"])
         return (ctx, response, cands)
 
 
