@@ -1,0 +1,12 @@
+# Copyright (c) HephaestusProject
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+# This your_mode.yml was made by soeque1 at 24/07/20.
+# writing configuration of your dataset.
+
+root: ./tests/
+target: resources
+raw:
+    train: sample.csv
+    val: sample.csv
