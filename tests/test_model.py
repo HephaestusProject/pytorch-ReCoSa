@@ -1,11 +1,10 @@
 import unittest
 
+import pytorch_lightning
 import torch
 
 from src.core.build_data import Config
 from src.model.net import DecoderModule, EncoderCtxModule, EncoderResponseModule, ReCoSA
-import pytorch_lightning
-
 
 SEED_NUM = 42
 
