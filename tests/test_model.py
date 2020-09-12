@@ -4,11 +4,14 @@ import torch
 
 from src.core.build_data import Config
 from src.model.net import DecoderModule, EncoderCtxModule, EncoderResponseModule, ReCoSA
+import pytorch_lightning
+
+
+SEED_NUM = 42
 
 
 class TestDATA:
-    """TestDATA
-    """
+    """TestDATA"""
 
     # batch, turn, seq_len
     ctx = torch.tensor(
@@ -40,6 +43,7 @@ class TestCtxEncoder(unittest.TestCase):
             _device=self.device,
         )
         self.data = TestDATA()
+        pytorch_lightning.seed_everything(SEED_NUM)
 
     def test_enc(self):
         self.assertEqual(
@@ -55,11 +59,11 @@ class TestCtxEncoder(unittest.TestCase):
         self.assertAlmostEqual(
             self.enc.rnn.weight_ih_l0[0][:5].tolist(),
             [
-                0.007807904854416847,
-                -0.004083490930497646,
-                -0.0158940888941288,
-                -0.034063901752233505,
-                0.06656615436077118,
+                -0.007601124234497547,
+                0.012321769259870052,
+                -0.03039667382836342,
+                -0.0514763742685318,
+                0.08616577088832855,
             ],
         )
 
@@ -70,11 +74,11 @@ class TestCtxEncoder(unittest.TestCase):
                 self.assertAlmostEqual(
                     param[0][:5].tolist(),
                     [
-                        0.007807904854416847,
-                        -0.004083490930497646,
-                        -0.0158940888941288,
-                        -0.034063901752233505,
-                        0.06656615436077118,
+                        -0.007601124234497547,
+                        0.012321769259870052,
+                        -0.03039667382836342,
+                        -0.0514763742685318,
+                        0.08616577088832855,
                     ],
                 )
             else:
@@ -104,6 +108,7 @@ class TestResponseEncoder(unittest.TestCase):
             _device=self.device,
         )
         self.data = TestDATA()
+        pytorch_lightning.seed_everything(SEED_NUM)
 
     def test_input(self):
         self.assertEqual(self.data.response.shape, torch.Size([1, 5]))
@@ -112,11 +117,11 @@ class TestResponseEncoder(unittest.TestCase):
         self.assertAlmostEqual(
             self.enc.self_attention.in_proj_weight[0, :5].tolist(),
             [
-                -0.08361693471670151,
-                -0.0017725080251693726,
-                -0.01934133470058441,
-                -0.022816017270088196,
-                0.07626446336507797,
+                0.015318885445594788,
+                0.048414446413517,
+                -0.022115185856819153,
+                0.02594170719385147,
+                -0.0734342709183693,
             ],
         )
 
@@ -152,6 +157,7 @@ class TestDecoder(unittest.TestCase):
             _device=self.device,
         )
         self.data = TestDATA()
+        pytorch_lightning.seed_everything(SEED_NUM)
 
     def test_forward_dec(self):
         enc_hidden = self.dec(
@@ -170,6 +176,7 @@ class TestReCoSa(unittest.TestCase):
         self.device = torch.device("cpu")
         self.recosa = ReCoSA(self.config, _device=self.device)
         self.data = TestDATA()
+        pytorch_lightning.seed_everything(SEED_NUM)
 
     def test_forward_recosa(self):
         res = self.recosa(
