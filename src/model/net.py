@@ -208,7 +208,10 @@ class ReCoSA(nn.Module):
     def __init__(self, config: dict, _device: torch.device) -> None:
         super().__init__()
         from transformers import BertTokenizer
+
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+        self.vocab_size = config["vocab_size"]
+        assert len(self.tokenizer) == self.vocab_size
 
         self._device = _device
         self.encoderCtx = EncoderCtxModule(
@@ -259,11 +262,9 @@ class ReCoSA(nn.Module):
         bos_token_id = 101
         eos_token_id = 102
         res = torch.tensor([[bos_token_id]]).to(self._device)
-        answer = ''
+        answer = ""
         for _ in range(10):
-            res = self.inference(
-                ctx, res
-            )
+            res = self.inference(ctx, res)
             if res.tolist() == eos_token_id:
                 break
             res = res.unsqueeze(0).unsqueeze(0)

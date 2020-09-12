@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, Callback
-from torch.nn.utils.rnn import pad_sequence
+from pytorch_lightning.metrics.nlp import BLEUScore
 
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
@@ -20,11 +20,9 @@ from argparse import ArgumentParser, Namespace
 
 
 class RecoSAPL(pl.LightningModule):
-    def __init__(
-        self, sep_token_id: int, config_path: str = "./conf/model/ReCoSa.yml"
-    ) -> None:
+    def __init__(self, config: dict) -> None:
         super().__init__()
-        self.config = Config.parse(config_path)
+        self.config = config
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = ReCoSA(config=self.config, _device=self._device)
 
@@ -48,9 +46,14 @@ class RecoSAPL(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         ctx, response, cands = batch
         loss = F.cross_entropy(self.model(ctx, response), cands, ignore_index=0)
+
+        ppl = torch.exp(
+            torch.min(loss / self.model.vocab_size, torch.tensor([100]).type_as(loss))
+        )
+
         result = pl.EvalResult(checkpoint_on=loss)
         result.log_dict(
-            {"val_loss": loss},
+            {"val_loss": loss, "val_ppl": ppl},
             prog_bar=True,
             logger=True,
             on_step=False,
@@ -63,12 +66,20 @@ class RecoSAPL(pl.LightningModule):
         return torch.optim.Adam(self.parameters(), lr=0.02)
 
 
-def main(config_data_file: str, version: str):
-    config = build({"config": config_data_file, "version": version})
+def main(config_data_file: str, config_model_file: str, version: str):
+    config_data = build({"config": config_data_file, "version": version})
+    config_model = Config.parse(config_model_file)
+
     train_data = UbuntuDataSet(
-        config["root"] + config["target"], config["raw"]["train"]
+        config_data["root"] + config_data["target"],
+        config_data["raw"]["train"],
+        config_model["max_seq"],
     )
-    val_data = UbuntuDataSet(config["root"] + config["target"], config["raw"]["val"])
+    val_data = UbuntuDataSet(
+        config_data["root"] + config_data["target"],
+        config_data["raw"]["val"],
+        config_model["max_seq"],
+    )
 
     train_dataloader = UbuntuDataLoader(
         train_data, batch_size=256, shuffle=False, num_workers=8, collate_fn=collate
@@ -76,9 +87,11 @@ def main(config_data_file: str, version: str):
     val_dataloader = UbuntuDataLoader(
         val_data, batch_size=256, shuffle=False, num_workers=8, collate_fn=collate
     )
-    logger = TensorBoardLogger(save_dir="exp", name=config["target"], version=version)
+    logger = TensorBoardLogger(
+        save_dir="exp", name=config_data["target"], version=version
+    )
 
-    prefix = f"exp/{config['target']}/{version}/"
+    prefix = f"exp/{config_data['target']}/{version}/"
     suffix = "{epoch:02d}-{avg_tr_loss:.4f}-{avg_tr_acc:.4f}-{avg_val_loss:.4f}-{avg_val_acc:.4f}"
     filepath = prefix + suffix
     checkpoint_callback = ModelCheckpoint(
@@ -89,7 +102,7 @@ def main(config_data_file: str, version: str):
         verbose=True,
     )
 
-    model = RecoSAPL(train_data._tokenizer.sep_token_id)
+    model = RecoSAPL(config_model)
 
     trainer = pl.Trainer(
         gpus=1,
@@ -109,6 +122,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config_data_file", default="./conf/dataset/ubuntu.yml", type=str
     )
+    parser.add_argument(
+        "--config_model_file", default="./conf/model/ReCoSa.yml", type=str
+    )
     parser.add_argument("--version", default="v0.0.1", type=str)
     args = parser.parse_args()
-    main(args.config_data_file, args.version)
+    main(args.config_data_file, args.config_model_file, args.version)

@@ -47,6 +47,7 @@ def dataload(_path: str, _max_history: int = 5) -> List[str]:
                 cands.append(response)
                 random.shuffle(cands)
             data.append({"context": context, "response": response, "cands": cands})
+
     return data
 
 
@@ -56,14 +57,17 @@ class UbuntuDataSet(Dataset):
     TODO: Cache
     """
 
-    def __init__(self, folderpath: str, filepath: str) -> None:
+    def __init__(
+        self,
+        folderpath: str,
+        filepath: str,
+        _max_seq: int = 50,
+    ) -> None:
         """"""
         self._path = folderpath + "/" + filepath
         self._corpus = dataload(self._path)
-        self._config = Config.parse("./conf/model/ReCoSa.yml")
         self._tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-        self.max_length = self._config["max_seq"]
-        self.vocab_size = len(self._tokenizer)
+        self._max_seq = _max_seq
 
     def __len__(self) -> int:
         return len(self._corpus)
@@ -72,7 +76,7 @@ class UbuntuDataSet(Dataset):
         return self._tokenizer.encode(
             _input,
             add_special_tokens=True,
-            max_length=self.max_length,
+            max_length=self._max_seq,
             pad_to_max_length=True,
             truncation=True,
         )
@@ -83,15 +87,15 @@ class UbuntuDataSet(Dataset):
     def get_cands_for_retreival(self, cands: list) -> List[torch.Tensor]:
         return [self.encode_fn(i) for i in cands]
 
-    def get_cands_for_generation(self, cands: list) -> torch.Tensor:
-        return self.encode_fn(cands[0])
+    def get_cands_for_generation(self, response: str) -> torch.Tensor:
+        return self.encode_fn(response)[1:] + [self._tokenizer.pad_token_id]
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         dataset = self._corpus[idx]
         ctx = self.get_ctx(dataset["context"])
         response = self.encode_fn(dataset["response"])
-        cands = self.get_cands_for_generation(dataset["cands"])
-        return (ctx, response, cands)
+        target = self.get_cands_for_generation(dataset["response"])
+        return (ctx, response, target)
 
 
 class UbuntuDataLoader(DataLoader):
