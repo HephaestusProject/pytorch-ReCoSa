@@ -9,7 +9,7 @@ from src.data import UbuntuDataLoader, UbuntuDataSet, collate
 class TestDataSet(unittest.TestCase):
     def setUp(self):
         self.data_config = Config.parse("./conf/dataset/ubuntu_test.yml")
-        self.model_config = Config.parse("./conf/model/ReCoSa.yml")
+        self.model_config = Config.parse("./conf/model/ReCoSa_test.yml")
         self.data = UbuntuDataSet(
             folderpath=self.data_config["root"] + self.data_config["target"],
             filepath=self.data_config["raw"]["train"],

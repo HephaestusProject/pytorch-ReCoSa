@@ -5,13 +5,13 @@
 # This your_mode.yml was made by soeque1 at 24/07/20.
 # writing configuration of your dataset.
 
-output_size: 256
+output_size: 512
 vocab_size: 30522
-embed_size: 128
-utter_hidden_size: 256
+embed_size: 512
+utter_hidden_size: 512
 utter_n_layer: 1
-batch_size: 256
+batch_size: 128
 dropout: 0.1
 out_size: 512
 max_seq: 50
-max_turns: 5
+max_turns: 15

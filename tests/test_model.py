@@ -213,7 +213,7 @@ class TestReCoSa(unittest.TestCase):
             self.data.ctx.to(self.device), self.data.response.to(self.device)
         )
         res_decoded = self.recosa.tokenizer.decode([res.item()])
-        self.assertEqual("fl", res_decoded)
+        self.assertEqual("photographers", res_decoded)
 
 
 if __name__ == "__main__":
