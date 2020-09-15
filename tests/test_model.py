@@ -13,15 +13,18 @@ class TestDATA:
 
     # batch, turn, seq_len
     ctx = torch.tensor(
-        [[[3087, 4282, 2339, 2026, 4518]], [[1045, 2275, 2039, 2026, 10751]]]
+        [
+            [[101, 3087, 4282, 2339, 2026, 4518, 102]],
+            [[101, 1045, 2275, 2039, 2026, 10751, 102]],
+        ]
     )
     # batch, seq_len
-    response = torch.tensor([[3087, 4282, 2339, 2026, 4518]])
-    dec_input = torch.rand([5, 1, 256])
+    response = torch.tensor([[101, 3087, 4282, 2339, 2026, 4518, 102]])
+    dec_input = torch.rand([7, 1, 256])
 
-    assert ctx.shape == torch.Size([2, 1, 5])
-    assert response.shape == torch.Size([1, 5])
-    assert dec_input.shape == torch.Size([5, 1, 256])
+    assert ctx.shape == torch.Size([2, 1, 7])
+    assert response.shape == torch.Size([1, 7])
+    assert dec_input.shape == torch.Size([7, 1, 256])
 
 
 class TestCtxEncoder(unittest.TestCase):
@@ -57,11 +60,11 @@ class TestCtxEncoder(unittest.TestCase):
         self.assertAlmostEqual(
             self.enc.rnn.weight_ih_l0[0][:5].tolist(),
             [
-                -0.007601124234497547,
-                0.012321769259870052,
-                -0.03039667382836342,
-                -0.0514763742685318,
-                0.08616577088832855,
+                0.03551452234387398,
+                0.027706846594810486,
+                0.06271561980247498,
+                0.02360149286687374,
+                0.008640228770673275,
             ],
         )
 
@@ -72,18 +75,18 @@ class TestCtxEncoder(unittest.TestCase):
                 self.assertAlmostEqual(
                     param[0][:5].tolist(),
                     [
-                        -0.007601124234497547,
-                        0.012321769259870052,
-                        -0.03039667382836342,
-                        -0.0514763742685318,
-                        0.08616577088832855,
+                        0.03551452234387398,
+                        0.027706846594810486,
+                        0.06271561980247498,
+                        0.02360149286687374,
+                        0.008640228770673275,
                     ],
                 )
             else:
                 pass
 
     def test_input(self):
-        self.assertEqual(self.data.ctx.shape, torch.Size([2, 1, 5]))
+        self.assertEqual(self.data.ctx.shape, torch.Size([2, 1, 7]))
 
     def test_forward_enc(self):
         output = self.enc(self.data.ctx.to(self.device))
@@ -109,7 +112,7 @@ class TestResponseEncoder(unittest.TestCase):
         pytorch_lightning.seed_everything(SEED_NUM)
 
     def test_input(self):
-        self.assertEqual(self.data.response.shape, torch.Size([1, 5]))
+        self.assertEqual(self.data.response.shape, torch.Size([1, 7]))
 
     def test_init(self):
         self.assertAlmostEqual(
@@ -176,6 +179,20 @@ class TestReCoSa(unittest.TestCase):
         self.data = TestDATA()
         pytorch_lightning.seed_everything(SEED_NUM)
 
+    def test_input(self):
+        # ctxs
+        # turns, batch, seq_len
+        # 1th-turn
+        self.assertEqual(
+            "[CLS] anyone knows why my stock [SEP]",
+            self.recosa.tokenizer.decode(self.data.ctx[0, 0, :]),
+        )
+        # 2nd-turn
+        self.assertEqual(
+            "[CLS] i set up my hd [SEP]",
+            self.recosa.tokenizer.decode(self.data.ctx[1, 0, :]),
+        )
+
     def test_forward_recosa(self):
         res = self.recosa(
             self.data.ctx.to(self.device), self.data.response.to(self.device)
@@ -191,10 +208,12 @@ class TestReCoSa(unittest.TestCase):
             ),
         )
 
-    @pytest.mark.skip(reason="To be trained.")
-    def test_predict_recosa(self):
-        res = self.recosa.predict(self.data.ctx.to(self.device))
-        self.assertEqual(res, "")
+    def test_inference_recosa(self):
+        res = self.recosa.inference(
+            self.data.ctx.to(self.device), self.data.response.to(self.device)
+        )
+        res_decoded = self.recosa.tokenizer.decode([res.item()])
+        self.assertEqual("fl", res_decoded)
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ vocab_size: 30522
 embed_size: 128
 utter_hidden_size: 256
 utter_n_layer: 1
-batch_size: 128
+batch_size: 256
 dropout: 0.1
 out_size: 512
 max_seq: 50

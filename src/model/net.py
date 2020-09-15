@@ -3,7 +3,6 @@
     To implement code of your network using operation from ops.py.
 """
 
-import math
 import random
 from typing import List, Optional
 
@@ -12,37 +11,9 @@ import torch
 from torch import dropout, nn, tensor
 from torch.functional import Tensor
 from torch.nn import init
+from transformers import BertTokenizer
 
-
-class PositionEmbedding(nn.Module):
-
-    """
-    Position embedding for self-attention
-    refer: https://pytorch.org/tutorials/beginner/transformer_tutorial.html
-
-    d_model: word embedding size or output size of the self-attention blocks
-    max_len: the max length of the input squeezec
-    """
-
-    def __init__(self, d_model, dropout=0.1, max_len=5000):
-        super(PositionEmbedding, self).__init__()
-        self.dropout = nn.Dropout(p=dropout)
-
-        pe = torch.zeros(max_len, d_model)  # [max_len, d_model]
-        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(
-            1
-        )  # [1, max_len]
-        div_term = torch.exp(
-            torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model)
-        )
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0).transpose(0, 1)
-        self.register_buffer("pe", pe)  # not the parameters of the Module
-
-    def forward(self, x):
-        x = x + self.pe[: x.size(0), :]
-        return self.dropout(x)
+from src.model.ops import PositionEmbedding
 
 
 class EncoderCtxModule(nn.Module):
@@ -207,8 +178,6 @@ class DecoderModule(nn.Module):
 class ReCoSA(nn.Module):
     def __init__(self, config: dict, _device: torch.device) -> None:
         super().__init__()
-        from transformers import BertTokenizer
-
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
         self.vocab_size = config["vocab_size"]
         assert len(self.tokenizer) == self.vocab_size
@@ -254,16 +223,16 @@ class ReCoSA(nn.Module):
         dec_res = dec_res.permute(1, 2, 0)
         return dec_res
 
-    def inference(self, ctx: torch.Tensor, response: torch.Tensor):
+    def inference(self, ctx: torch.Tensor, response: torch.Tensor) -> torch.Tensor:
         res = self.forward(ctx, response)
         return torch.argmax(res[0, :, 0])
 
-    def predict(self, ctx: torch.Tensor):
+    def predict(self, ctx: torch.Tensor, max_seq: int = 50) -> str:
         bos_token_id = 101
         eos_token_id = 102
         res = torch.tensor([[bos_token_id]]).to(self._device)
         answer = ""
-        for _ in range(10):
+        for _ in range(max_seq):
             res = self.inference(ctx, res)
             if res.tolist() == eos_token_id:
                 break

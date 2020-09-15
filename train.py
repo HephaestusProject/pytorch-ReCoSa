@@ -29,12 +29,23 @@ class RecoSAPL(pl.LightningModule):
     def forward(self, x):
         return self.model.forward()
 
+    def inference(self, ctx: torch.Tensor, response: torch.Tensor) -> torch.Tensor:
+        return self.model.inference(ctx, response)
+
+    def predict(self, ctx: torch.Tensor) -> str:
+        return self.model.predict(ctx)
+
     def training_step(self, batch, batch_idx):
-        ctx, response, cands = batch
-        loss = F.cross_entropy(self.model(ctx, response), cands, ignore_index=0)
+        ctx, response, target = batch
+        pred = self.model(ctx, response)
+        if batch_idx == 0:
+            print(self.model.tokenizer.decode(torch.argmax(pred[0], dim=0)))
+            print(self.model.tokenizer.decode(response[0]))
+        loss = F.cross_entropy(pred, target, ignore_index=0)
+        ppl = torch.exp(loss)
         result = pl.TrainResult(minimize=loss)
         result.log_dict(
-            {"tr_loss": loss},
+            {"tr_loss": loss, "tr_ppl": ppl},
             prog_bar=True,
             logger=True,
             on_epoch=True,
@@ -44,13 +55,10 @@ class RecoSAPL(pl.LightningModule):
         return result
 
     def validation_step(self, batch, batch_idx):
-        ctx, response, cands = batch
-        loss = F.cross_entropy(self.model(ctx, response), cands, ignore_index=0)
-
-        ppl = torch.exp(
-            torch.min(loss / self.model.vocab_size, torch.tensor([100]).type_as(loss))
-        )
-
+        ctx, response, target = batch
+        pred = self.model(ctx, response)
+        loss = F.cross_entropy(pred, target, ignore_index=0)
+        ppl = torch.exp(loss)
         result = pl.EvalResult(checkpoint_on=loss)
         result.log_dict(
             {"val_loss": loss, "val_ppl": ppl},
@@ -66,7 +74,7 @@ class RecoSAPL(pl.LightningModule):
         return torch.optim.Adam(self.parameters(), lr=0.02)
 
 
-def main(config_data_file: str, config_model_file: str, version: str):
+def main(config_data_file: str, config_model_file: str, version: str) -> None:
     config_data = build({"config": config_data_file, "version": version})
     config_model = Config.parse(config_model_file)
 
@@ -82,35 +90,47 @@ def main(config_data_file: str, config_model_file: str, version: str):
     )
 
     train_dataloader = UbuntuDataLoader(
-        train_data, batch_size=256, shuffle=False, num_workers=8, collate_fn=collate
+        train_data,
+        batch_size=config_model["batch_size"],
+        shuffle=True,
+        num_workers=8,
+        collate_fn=collate,
     )
     val_dataloader = UbuntuDataLoader(
-        val_data, batch_size=256, shuffle=False, num_workers=8, collate_fn=collate
+        val_data,
+        batch_size=config_model["batch_size"],
+        shuffle=False,
+        num_workers=8,
+        collate_fn=collate,
     )
     logger = TensorBoardLogger(
         save_dir="exp", name=config_data["target"], version=version
     )
 
     prefix = f"exp/{config_data['target']}/{version}/"
-    suffix = "{epoch:02d}-{avg_tr_loss:.4f}-{avg_tr_acc:.4f}-{avg_val_loss:.4f}-{avg_val_acc:.4f}"
+    suffix = "{epoch:02d}-{val_loss:.4f}"
     filepath = prefix + suffix
     checkpoint_callback = ModelCheckpoint(
         filepath=filepath,
         save_top_k=1,
-        monitor="avg_val_acc",
+        monitor="val_loss",
         save_weights_only=True,
         verbose=True,
     )
 
     model = RecoSAPL(config_model)
 
+    trainer_params = {
+        "gpus": [1],
+        "num_nodes": 1,
+        "distributed_backend": "ddp",
+        "amp_level": "O2",
+        "amp_backend": "native",
+    }
+
     trainer = pl.Trainer(
-        gpus=1,
-        num_nodes=1,
-        distributed_backend="ddp",
-        amp_level="O2",
-        amp_backend="native",
-        max_epochs=10,
+        **trainer_params,
+        max_epochs=100,
         logger=logger,
         checkpoint_callback=checkpoint_callback,
     )
