@@ -130,10 +130,9 @@ class EncoderResponseModule(nn.Module):
         Shape:
             see the docs in Transformer class.
         """
-        src = src.transpose(0, 1)
         embedded = self.emb(src)
-        response = self.position_embeddings(embedded)
-        mask = self._generate_square_subsequent_mask(len(src)).to(self.device)
+        response = self.position_embeddings(embedded).transpose(0, 1)
+        mask = self._generate_square_subsequent_mask(src.shape[1]).to(self.device)
         attn, _ = self.self_attention(response, response, response, attn_mask=mask)
         return attn
 
