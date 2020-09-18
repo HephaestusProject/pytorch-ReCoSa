@@ -74,6 +74,7 @@ class RecoSAPL(pl.LightningModule):
         return torch.optim.Adam(self.parameters(), lr=1e-4)
 
     def test_step(self, batch, batch_idx):
+        bleuS = BLEUScore()
         ctx, _, target = batch
         pred, pred_max = self.model.predict(
             ctx, batch_size=ctx.shape[0], max_seq=ctx.shape[2]
@@ -81,8 +82,14 @@ class RecoSAPL(pl.LightningModule):
         loss = F.cross_entropy(pred, target, ignore_index=0)
         ppl = torch.exp(loss)
         result = pl.EvalResult(checkpoint_on=loss)
+        pred_sentence = [self.model.tokenizer.decode(i).split() for i in pred_max]
+        target_senctence = [self.model.tokenizer.decode(i).split() for i in target]
+        bleu_score = bleuS(pred_sentence, target_senctence).to(ppl.device)
+
+        # TO BE FIXED:
+        # PPL, BLEU (for corpus)
         result.log_dict(
-            {"val_loss_gen": loss, "val_ppl_gen": ppl},
+            {"val_loss_gen": loss, "val_ppl_gen": ppl, "val_bleu_gen": bleu_score},
             prog_bar=True,
             logger=True,
             on_step=False,
