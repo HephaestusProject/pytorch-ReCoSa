@@ -60,11 +60,11 @@ class TestCtxEncoder(unittest.TestCase):
         self.assertAlmostEqual(
             self.enc.rnn.weight_ih_l0[0][:5].tolist(),
             [
-                0.03551452234387398,
-                0.027706846594810486,
-                0.06271561980247498,
-                0.02360149286687374,
-                0.008640228770673275,
+                -0.04221362620592117,
+                -0.052751462906599045,
+                0.0416913703083992,
+                0.014486987143754959,
+                0.029713977128267288,
             ],
         )
 
@@ -75,11 +75,11 @@ class TestCtxEncoder(unittest.TestCase):
                 self.assertAlmostEqual(
                     param[0][:5].tolist(),
                     [
-                        0.03551452234387398,
-                        0.027706846594810486,
-                        0.06271561980247498,
-                        0.02360149286687374,
-                        0.008640228770673275,
+                        -0.04221362620592117,
+                        -0.052751462906599045,
+                        0.0416913703083992,
+                        0.014486987143754959,
+                        0.029713977128267288,
                     ],
                 )
             else:
@@ -208,12 +208,16 @@ class TestReCoSa(unittest.TestCase):
             ),
         )
 
-    def test_inference_recosa(self):
-        res = self.recosa.inference(
-            self.data.ctx.to(self.device), self.data.response.to(self.device)
+    def test_predict_recosa(self):
+        res, res_max = self.recosa.predict(self.data.ctx.to(self.device))
+        batch_size = self.data.ctx.shape[1]
+        self.assertEqual(
+            torch.Size([batch_size, self.config["vocab_size"], self.config["max_seq"]]),
+            res.shape,
         )
-        res_decoded = self.recosa.tokenizer.decode([res.item()])
-        self.assertEqual("photographers", res_decoded)
+        self.assertEqual(
+            torch.Size([batch_size, self.config["max_seq"]]), res_max.shape
+        )
 
 
 if __name__ == "__main__":

@@ -71,7 +71,25 @@ class RecoSAPL(pl.LightningModule):
         return result
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=0.02)
+        return torch.optim.Adam(self.parameters(), lr=1e-4)
+
+    def test_step(self, batch, batch_idx):
+        ctx, _, target = batch
+        pred, pred_max = self.model.predict(
+            ctx, batch_size=ctx.shape[0], max_seq=ctx.shape[2]
+        )
+        loss = F.cross_entropy(pred, target, ignore_index=0)
+        ppl = torch.exp(loss)
+        result = pl.EvalResult(checkpoint_on=loss)
+        result.log_dict(
+            {"val_loss_gen": loss, "val_ppl_gen": ppl},
+            prog_bar=True,
+            logger=True,
+            on_step=False,
+            on_epoch=True,
+            sync_dist=True,
+        )
+        return result
 
 
 def main(config_data_file: str, config_model_file: str, version: str) -> None:

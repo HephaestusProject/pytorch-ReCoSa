@@ -65,24 +65,26 @@ class EncoderCtxModule(nn.Module):
 
     def forward_rnn(self, src: List[tensor], hidden: tuple = None):
         embedded = self.emb(src)
-        if not hidden:
+        if hidden is None:
             hidden = (
-                torch.randn(self.n_layers, src.shape[-1], self.hidden_size).to(
+                torch.zeros(self.n_layers, src.shape[-1], self.hidden_size).to(
                     self.device
                 ),
-                torch.randn(self.n_layers, src.shape[-1], self.hidden_size).to(
+                torch.zeros(self.n_layers, src.shape[-1], self.hidden_size).to(
                     self.device
                 ),
             )
         _, hidden = self.rnn(embedded, hidden)
         return hidden
 
-    def forward(self, src: List[tensor]):
+    def forward(self, src: List[tensor], hidden: tuple = None):
         turn_size = len(src)
         turns = []
+        hidden = None
         for i in range(turn_size):
-            h_0, c_0 = self.forward_rnn(src[i])
-            turns.append(h_0.sum(axis=0))
+            # hidden = h_0, c_0
+            hidden = self.forward_rnn(src[i], hidden)
+            turns.append(hidden[0].sum(axis=0))
         turns = torch.stack(turns)
         turns = turns.transpose(0, 1)
 
@@ -216,29 +218,32 @@ class ReCoSA(nn.Module):
 
     def forward(self, ctx: torch.Tensor, response: torch.Tensor):
         enc_ctx = self.encoderCtx(ctx)
+        dec_res = self.inference(enc_ctx, response)
+        return dec_res
+
+    def inference(self, enc_ctx: torch.Tensor, response: torch.Tensor) -> torch.Tensor:
         enc_res = self.encoderResponse(response)
-        # seq_len, batch, vocab_size
         dec_res = self.decoder(query=enc_res, key=enc_ctx, value=enc_ctx)
         # batch, vocab_size, seq_len
         dec_res = dec_res.permute(1, 2, 0)
         return dec_res
 
-    def inference(self, ctx: torch.Tensor, response: torch.Tensor) -> torch.Tensor:
-        res = self.forward(ctx, response)
-        return torch.argmax(res[0, :, 0])
-
-    def predict(self, ctx: torch.Tensor, max_seq: int = 50) -> str:
+    def predict(self, ctx: torch.Tensor, batch_size: int = 1, max_seq: int = 50) -> str:
         bos_token_id = 101
         eos_token_id = 102
-        res = torch.tensor([[bos_token_id]]).to(self._device)
-        answer = ""
+        pred_res_max = torch.tensor([[bos_token_id]] * batch_size).to(self._device)
+        enc_ctx = self.encoderCtx(ctx)
         for _ in range(max_seq):
-            res = self.inference(ctx, res)
-            if res.tolist() == eos_token_id:
-                break
-            res = res.unsqueeze(0).unsqueeze(0)
-            answer += self.tokenizer.decode(res)
-        return answer
+            pred_res = self.inference(enc_ctx, pred_res_max)
+            current_pred_res_max = torch.argmax(pred_res[:, :, 0], dim=1).unsqueeze(1)
+            pred_res_max = torch.cat([pred_res_max, current_pred_res_max], dim=1)
+            # TODO: batch_size
+            # if pred_res_max[0].tolist() == eos_token_id:
+            #     break
+        return pred_res, pred_res_max[:, 1:]
+
+    def decode(self, response: List[torch.Tensor]) -> str:
+        return self.tokenizer.decode(response)
 
 
 if __name__ == "__main__":
