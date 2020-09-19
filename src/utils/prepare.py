@@ -24,7 +24,11 @@ def build(opt: dict):
     config = Config.parse(opt["config"])
 
     dpath = os.path.join(config["root"], config["target"])
-    resources = [DownloadableFile(**config["curl"])]
+    if config.get("curl", None) is None:
+        logger.warning("DownloadableFile does not exist!; Off-line Data will be used.")
+        return config
+    else:
+        resources = [DownloadableFile(**config["curl"])]
 
     logger.debug("Check built")
     if not build_data.built(dpath, version_string=opt["version"]):

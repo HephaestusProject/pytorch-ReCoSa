@@ -19,16 +19,17 @@ from transformers import BertModel, BertTokenizer
 from src.core.build_data import Config
 
 
-def dataload(_path: str, _max_history: int = 5) -> List[str]:
-    def make_max_contexts(ctx: list, _max_history: int):
-        context = []
-        for idx in range(_max_history):
-            try:
-                context.append(ctx[idx])
-            except IndexError:
-                context.append("")
-        return context
+def make_max_contexts(ctx: list, _max_history: int):
+    context = []
+    for idx in range(_max_history):
+        try:
+            context.append(ctx[idx])
+        except IndexError:
+            context.append("")
+    return context
 
+
+def dataload_ubuntu(_path: str, _max_history: int = 5) -> List[str]:
     data = []
     with open(_path, "r", newline="") as read:
         csv_read = csv.reader(read)
@@ -40,12 +41,66 @@ def dataload(_path: str, _max_history: int = 5) -> List[str]:
             ]
 
             context = make_max_contexts(fields[0].split("\n"), _max_history)
-            response = fields[1].strip()
+            try:
+                response = fields[1].strip()
+            except IndexError:
+                import pdb
+
+                pdb.set_trace()
             cands = None
             if len(fields) > 3:
                 cands = [fields[i] for i in range(2, len(fields))]
                 cands.append(response)
                 random.shuffle(cands)
+            data.append({"context": context, "response": response, "cands": cands})
+
+    return data
+
+
+def dataload_DSTC7_AVSD(_path: str, _max_history: int = 5) -> List[str]:
+    """https://github.com/gmftbyGMFTBY/MultiTurnDialogZoo/blob/master/data/dataset_process/plato_process.py
+
+    Args:
+        _path (str): [description]
+        _max_history (int, optional): [description]. Defaults to 5.
+
+    Returns:
+        List[str]: [description]
+    """
+    data = []
+    with open(_path, "r", newline="") as read:
+        csv_read = csv.reader(read, delimiter="\n")
+
+        for line in csv_read:
+            context = []
+            response = []
+            dialogue = line[0].strip()
+            se = dialogue.split("\t")
+            assert len(se) == 3
+
+            # PersonaChat
+            knowledge, ctx, res = se
+            ku = knowledge.split("__eou__")
+            ku = ["<user0> " + i.strip() for i in ku]
+            ku = " __eou__ ".join(ku)
+            cu = ctx.split("__eou__")
+
+            speaker = "<user0> "
+            fcu = []
+            for i in cu:
+                fcu.append(speaker + i.strip())
+                speaker = "<user0> " if speaker == "<user1> " else "<user1> "
+            fcu = " __eou__ ".join(fcu)
+            # train/dev is different from the test in DSTC7_AVSD dataset
+            if "|" in res:
+                res = speaker + res.split("|")[0].strip()
+            else:
+                res = speaker + res.strip()
+            context = make_max_contexts(
+                (ku + " __eou__ " + fcu).split("__eou__"), _max_history
+            )
+            response = res
+            cands = None
             data.append({"context": context, "response": response, "cands": cands})
 
     return data
@@ -62,10 +117,16 @@ class UbuntuDataSet(Dataset):
         folderpath: str,
         filepath: str,
         _max_seq: int = 50,
+        _data_name: str = "ubuntu",
     ) -> None:
         """"""
         self._path = folderpath + "/" + filepath
-        self._corpus = dataload(self._path)
+        if _data_name == "Ubuntu":
+            self._corpus = dataload_ubuntu(self._path)
+        elif _data_name == "DSTC7_AVSD":
+            self._corpus = dataload_DSTC7_AVSD(self._path)
+        else:
+            assert NotImplementedError
         self._tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
         self._max_seq = _max_seq
 
