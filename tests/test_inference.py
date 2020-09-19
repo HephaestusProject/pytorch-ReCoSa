@@ -56,6 +56,7 @@ class TestReCoSaInference(unittest.TestCase):
     def test_predict_recosa(self):
         _, res = self.recosa.predict(self.ctx)
         res_decoded = self.recosa.model.tokenizer.decode(res[0])
+        print(res_decoded)
         self.assertEqual(res_decoded.split()[0], "thanks")
 
 

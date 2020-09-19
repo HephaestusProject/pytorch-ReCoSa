@@ -6,6 +6,9 @@
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
+from torch.optim import Adam
+from torch.optim.lr_scheduler import ExponentialLR
+
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, Callback
@@ -38,7 +41,7 @@ class RecoSAPL(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         ctx, response, target = batch
         pred = self.model(ctx, response)
-        if batch_idx == 0:
+        if batch_idx % 1000 == 0:
             print(self.model.tokenizer.decode(torch.argmax(pred[0], dim=0)))
             print(self.model.tokenizer.decode(response[0]))
         loss = F.cross_entropy(pred, target, ignore_index=0)
@@ -71,7 +74,9 @@ class RecoSAPL(pl.LightningModule):
         return result
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-4)
+        opt = Adam(params=self.model.parameters(), lr=1e-4)
+        scheduler = ExponentialLR(opt, gamma=0.95)
+        return [opt], [scheduler]
 
     def test_step(self, batch, batch_idx):
         bleuS = BLEUScore()
@@ -146,7 +151,7 @@ def main(config_data_file: str, config_model_file: str, version: str) -> None:
     model = RecoSAPL(config_model)
 
     trainer_params = {
-        "gpus": [1],
+        "gpus": [0],
         "num_nodes": 1,
         "distributed_backend": "ddp",
         "amp_level": "O2",

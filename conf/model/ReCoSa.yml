@@ -9,7 +9,7 @@ output_size: 512
 vocab_size: 30522
 embed_size: 512
 utter_hidden_size: 512
-utter_n_layer: 1
+utter_n_layer: 2
 batch_size: 128
 dropout: 0.1
 out_size: 512

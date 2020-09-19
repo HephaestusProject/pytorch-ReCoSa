@@ -8,4 +8,13 @@
 #python train.py --version=v0.0.3 2>&1 | tee lightning_logs/train_v0.0.3.log
 
 # fix: lstm
-python train.py --version=v0.0.4 2>&1 | tee lightning_logs/train_v0.0.4.log
+# python train.py --version=v0.0.4 2>&1 | tee lightning_logs/train_v0.0.4.log
+
+# fix: response enc
+# python train.py --version=v0.0.5 2>&1 | tee lightning_logs/train_v0.0.5.log
+
+# fix: tying embedding and output of decoder & fix decoder
+# python train.py --version=v0.0.6 2>&1 | tee lightning_logs/train_v0.0.6.log
+
+# fix: LR model params & add: LR scheduler
+python train.py --version=v0.0.7 2>&1 | tee lightning_logs/train_v0.0.7.log

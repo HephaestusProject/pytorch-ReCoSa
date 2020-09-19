@@ -169,8 +169,18 @@ class DecoderModule(nn.Module):
     def init_w(self):
         pass
 
+    def _generate_square_subsequent_mask(self, sz):
+        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
+        mask = (
+            mask.float()
+            .masked_fill(mask == 0, float("-inf"))
+            .masked_fill(mask == 1, float(0.0))
+        )
+        return mask
+
     def forward(self, key, query, value):
-        output, _ = self.self_attention(query, key, value)
+        mask = self._generate_square_subsequent_mask(query.shape[0]).to(self.device)
+        output, _ = self.self_attention(query, key, value, attn_mask=mask)
         output = self.layer_norm1(output)
         output = self.linear1(output)
         return output
@@ -243,6 +253,32 @@ class ReCoSA(nn.Module):
 
     def decode(self, response: List[torch.Tensor]) -> str:
         return self.tokenizer.decode(response)
+
+    def tie_weights(self):
+        """"""
+        self._tie_or_clone_weights(self.decoder.linear1, self.decoder.embed)
+
+    def _tie_or_clone_weights(self, output_embeddings, input_embeddings):
+        """Tie or clone module weights depending of whether we are using TorchScript or not"""
+        if self.config.torchscript:
+            output_embeddings.weight = nn.Parameter(input_embeddings.weight.clone())
+        else:
+            output_embeddings.weight = input_embeddings.weight
+
+        if getattr(output_embeddings, "bias", None) is not None:
+            output_embeddings.bias.data = torch.nn.functional.pad(
+                output_embeddings.bias.data,
+                (
+                    0,
+                    output_embeddings.weight.shape[0] - output_embeddings.bias.shape[0],
+                ),
+                "constant",
+                0,
+            )
+        if hasattr(output_embeddings, "out_features") and hasattr(
+            input_embeddings, "num_embeddings"
+        ):
+            output_embeddings.out_features = input_embeddings.num_embeddings
 
 
 if __name__ == "__main__":
