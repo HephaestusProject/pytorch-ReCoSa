@@ -179,8 +179,10 @@ class DecoderModule(nn.Module):
         return mask
 
     def forward(self, key, query, value):
-        mask = self._generate_square_subsequent_mask(query.shape[0]).to(self.device)
-        output, _ = self.self_attention(query, key, value, attn_mask=mask)
+        mask = self._generate_square_subsequent_mask(key.shape[0])[0, :].to(self.device)
+        # batch * mask
+        mask = mask.repeat(key.shape[1], 1)
+        output, _ = self.self_attention(query, key, value, key_padding_mask=mask)
         output = self.layer_norm1(output)
         output = self.linear1(output)
         return output
@@ -238,6 +240,7 @@ class ReCoSA(nn.Module):
         return dec_res
 
     def predict(self, ctx: torch.Tensor, batch_size: int = 1, max_seq: int = 50) -> str:
+        # TO BE CHECKED input
         bos_token_id = 101
         eos_token_id = 102
         pred_res_max = torch.tensor([[bos_token_id]] * batch_size).to(self._device)

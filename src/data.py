@@ -117,7 +117,7 @@ class UbuntuDataSet(Dataset):
         folderpath: str,
         filepath: str,
         _max_seq: int = 50,
-        _data_name: str = "ubuntu",
+        _data_name: str = "Ubuntu",
     ) -> None:
         """"""
         self._path = folderpath + "/" + filepath

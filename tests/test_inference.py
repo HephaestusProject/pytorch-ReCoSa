@@ -10,7 +10,7 @@ class TestReCoSaInference(unittest.TestCase):
     def setUp(self):
         self.device = torch.device("cpu")
         config_data = Config.parse("./conf/dataset/ubuntu_test.yml")
-        config_model = Config.parse("./conf/model/ReCoSa.yml")
+        config_model = Config.parse("./conf/model/ReCoSa_test.yml")
         config_api = Config.parse("./conf/api/ReCoSa.yml")
         self.recosa = RecoSAPL.load_from_checkpoint(
             config_api["model_path"], **config_model

@@ -5,8 +5,8 @@
 # This your_mode.yml was made by soeque1 at 24/07/20.
 # writing configuration of your dataset.
 
-root: ./tests/
-target: resources
+root: ./tests/resources/
+target: Ubuntu
 raw:
     train: sample.csv
     val: sample.csv

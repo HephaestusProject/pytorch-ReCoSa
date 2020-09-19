@@ -14,16 +14,21 @@ class TestDATA:
     # batch, turn, seq_len
     ctx = torch.tensor(
         [
-            [[101, 3087, 4282, 2339, 2026, 4518, 102]],
-            [[101, 1045, 2275, 2039, 2026, 10751, 102]],
+            [
+                [101, 3087, 4282, 2339, 2026, 4518, 102],
+                [101, 1045, 2275, 2039, 2026, 10751, 102],
+            ]
         ]
     )
     # batch, seq_len
     response = torch.tensor([[101, 3087, 4282, 2339, 2026, 4518, 102]])
     dec_input = torch.rand([7, 1, 256])
 
-    assert ctx.shape == torch.Size([2, 1, 7])
+    # batch, turn, seq_len
+    assert ctx.shape == torch.Size([1, 2, 7])
+    # batch, seq_len
     assert response.shape == torch.Size([1, 7])
+    # seq_len, batch, hidden_size
     assert dec_input.shape == torch.Size([7, 1, 256])
 
 
@@ -86,7 +91,7 @@ class TestCtxEncoder(unittest.TestCase):
                 pass
 
     def test_input(self):
-        self.assertEqual(self.data.ctx.shape, torch.Size([2, 1, 7]))
+        self.assertEqual(self.data.ctx.shape, torch.Size([1, 2, 7]))
 
     def test_forward_enc(self):
         output = self.enc(self.data.ctx.to(self.device))
@@ -173,7 +178,7 @@ class TestDecoder(unittest.TestCase):
 
 class TestReCoSa(unittest.TestCase):
     def setUp(self):
-        self.config = Config.parse("./conf/model/ReCoSa.yml")
+        self.config = Config.parse("./conf/model/ReCoSa_test.yml")
         self.device = torch.device("cpu")
         self.recosa = ReCoSA(self.config, _device=self.device)
         self.data = TestDATA()
@@ -190,7 +195,7 @@ class TestReCoSa(unittest.TestCase):
         # 2nd-turn
         self.assertEqual(
             "[CLS] i set up my hd [SEP]",
-            self.recosa.tokenizer.decode(self.data.ctx[1, 0, :]),
+            self.recosa.tokenizer.decode(self.data.ctx[0, 1, :]),
         )
 
     def test_forward_recosa(self):
@@ -201,7 +206,7 @@ class TestReCoSa(unittest.TestCase):
             res.shape,
             torch.Size(
                 [
-                    self.data.ctx.size()[1],
+                    self.data.ctx.size()[0],
                     self.config["vocab_size"],
                     self.data.ctx.size()[-1],
                 ]
@@ -210,7 +215,7 @@ class TestReCoSa(unittest.TestCase):
 
     def test_predict_recosa(self):
         res, res_max = self.recosa.predict(self.data.ctx.to(self.device))
-        batch_size = self.data.ctx.shape[1]
+        batch_size = self.data.ctx.shape[0]
         self.assertEqual(
             torch.Size([batch_size, self.config["vocab_size"], self.config["max_seq"]]),
             res.shape,

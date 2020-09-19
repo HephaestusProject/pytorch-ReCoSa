@@ -1,3 +1,6 @@
+# debug
+python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v.test 2>&1 | tee lightning_logs/train_v.test.log
+
 # init
 #python train.py --version=v0.0.1 2>&1 | tee lightning_logs/train.log
 
@@ -20,4 +23,4 @@
 # python train.py --version=v0.0.7 2>&1 | tee lightning_logs/train_v0.0.7.log
 
 # add: DSTC7_AVSD
-python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.0.8 2>&1 | tee lightning_logs/train_v0.0.8.log
+# python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.0.8 2>&1 | tee lightning_logs/train_v0.0.8.log
