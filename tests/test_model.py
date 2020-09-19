@@ -214,15 +214,14 @@ class TestReCoSa(unittest.TestCase):
         )
 
     def test_predict_recosa(self):
-        res, res_max = self.recosa.predict(self.data.ctx.to(self.device))
+        ctxs = self.data.ctx.to(self.device)
+        res, res_max = self.recosa.predict(ctxs, max_seq=ctxs.shape[2])
         batch_size = self.data.ctx.shape[0]
         self.assertEqual(
-            torch.Size([batch_size, self.config["vocab_size"], self.config["max_seq"]]),
+            torch.Size([batch_size, self.config["vocab_size"], ctxs.shape[2]]),
             res.shape,
         )
-        self.assertEqual(
-            torch.Size([batch_size, self.config["max_seq"]]), res_max.shape
-        )
+        self.assertEqual(torch.Size([batch_size, ctxs.shape[2]]), res_max.shape)
 
 
 if __name__ == "__main__":

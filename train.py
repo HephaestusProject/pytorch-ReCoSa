@@ -153,7 +153,7 @@ def main(config_data_file: str, config_model_file: str, version: str) -> None:
     model = RecoSAPL(config_model)
 
     trainer_params = {
-        "gpus": [0],
+        "gpus": [1],
         "num_nodes": 1,
         "distributed_backend": "ddp",
         "amp_level": "O2",

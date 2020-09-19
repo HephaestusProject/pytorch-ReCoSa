@@ -126,7 +126,7 @@ class UbuntuDataSet(Dataset):
         elif _data_name == "DSTC7_AVSD":
             self._corpus = dataload_DSTC7_AVSD(self._path)
         else:
-            assert NotImplementedError
+            raise NotImplementedError
         self._tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
         self._max_seq = _max_seq
 
