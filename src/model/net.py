@@ -4,6 +4,7 @@
 """
 
 import random
+from logging import getLogger
 from typing import List, Optional
 
 import pytorch_lightning
@@ -14,6 +15,8 @@ from torch.nn import init
 from transformers import BertTokenizer
 
 from src.model.ops import PositionEmbedding
+
+logger = getLogger(__name__)
 
 
 class EncoderCtxModule(nn.Module):
@@ -188,12 +191,18 @@ class DecoderModule(nn.Module):
                 raise NotImplementedError
             batch_size = key.shape[1]
             seq_len = key.shape[0]
-            mask = self._generate_square_subsequent_mask(seq_len)[
-                query.shape[0] - 1, :
-            ].to(self.device)
-            # batch * mask
-            mask = mask.repeat(batch_size, 1)
-            output, _ = self.self_attention(query, key, value, key_padding_mask=mask)
+            mask = self._generate_square_subsequent_mask(seq_len)[: query.shape[0]].to(
+                self.device
+            )
+            output, _ = self.self_attention(query, key, value, attn_mask=mask)
+            # mask = self._generate_square_subsequent_mask(seq_len)[
+            #     query.shape[0] - 1, :
+            # ].to(self.device)
+            # # batch * mask
+            # mask = mask.repeat(batch_size, 1)
+            # output, _ = self.self_attention(
+            #     query, key, value, key_padding_mask=mask.bool()
+            # )
         output = self.layer_norm1(output)
         output = self.linear1(output)
         return output
@@ -250,6 +259,7 @@ class ReCoSA(nn.Module):
         dec_res = self.decoder(query=enc_res, key=enc_ctx, value=enc_ctx, _train=_train)
         # batch, vocab_size, seq_len
         dec_res = dec_res.permute(1, 2, 0)
+        logger.debug(self.tokenizer.decode(torch.argmax(dec_res[0], dim=0)))
         return dec_res
 
     def predict(self, ctx: torch.Tensor, batch_size: int = 1, max_seq: int = 50) -> str:
@@ -259,7 +269,7 @@ class ReCoSA(nn.Module):
         enc_ctx = self.encoderCtx(ctx)
         for _ in range(max_seq):
             pred_res = self.inference(enc_ctx, pred_res_max, _train=False)
-            current_pred_res_max = torch.argmax(pred_res[:, :, 0], dim=1).unsqueeze(1)
+            current_pred_res_max = torch.argmax(pred_res[:, :, -1], dim=1).unsqueeze(1)
             pred_res_max = torch.cat([pred_res_max, current_pred_res_max], dim=1)
             # TODO: batch_size
             # if pred_res_max[0].tolist() == eos_token_id:

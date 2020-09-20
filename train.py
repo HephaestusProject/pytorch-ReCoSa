@@ -20,6 +20,9 @@ from src.model.net import ReCoSA
 from src.utils.prepare import build
 
 from argparse import ArgumentParser, Namespace
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 
 class RecoSAPL(pl.LightningModule):
@@ -81,15 +84,29 @@ class RecoSAPL(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         bleuS = BLEUScore()
         ctx, _, target = batch
-        pred, pred_max = self.model.predict(
+        pred, pred_sen = self.model.predict(
             ctx, batch_size=ctx.shape[0], max_seq=ctx.shape[2]
         )
         loss = F.cross_entropy(pred, target, ignore_index=0)
         ppl = torch.exp(loss)
         result = pl.EvalResult(checkpoint_on=loss)
-        pred_sentence = [self.model.tokenizer.decode(i).split() for i in pred_max]
-        target_senctence = [self.model.tokenizer.decode(i).split() for i in target]
+        pred_sentence = [
+            self.model.tokenizer.decode(i)
+            .split(self.model.tokenizer.sep_token)[0]
+            .split()
+            for i in pred_sen
+        ]
+        target_senctence = [
+            self.model.tokenizer.decode(i)
+            .split(self.model.tokenizer.sep_token)[0]
+            .split()
+            for i in target
+        ]
         bleu_score = bleuS(pred_sentence, target_senctence).to(ppl.device)
+
+        if batch_idx == 0:
+            print("pred: ", " ".join(pred_sentence[0]))
+            print("target: ", " ".join(target_senctence[0]))
 
         # TO BE FIXED:
         # PPL, BLEU (for corpus)

@@ -1,9 +1,15 @@
 import pytest
 import torch
+import pytorch_lightning
 import unittest
 from train import RecoSAPL
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
+from .test_model import SEED_NUM
+
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 
 class TestReCoSaInference(unittest.TestCase):
@@ -32,6 +38,7 @@ class TestReCoSaInference(unittest.TestCase):
         self.ctx = sample_data[0].to(self.device)
         self.response = sample_data[1].to(self.device)
         self.target = sample_data[2].to(self.device)
+        pytorch_lightning.seed_everything(SEED_NUM)
 
     def test_inputs(self):
         batch_idx = 0
@@ -52,12 +59,19 @@ class TestReCoSaInference(unittest.TestCase):
             self.recosa.model.tokenizer.decode(self.target[batch_idx]),
         )
 
+    def test_forward_recosa(self):
+        dec_res = self.recosa.model(self.ctx, self.target)
+        dec_res = torch.argmax(dec_res[0], dim=0)
+        res_decoded = self.recosa.model.tokenizer.decode(dec_res)
+        logger.debug(res_decoded)
+        self.assertEqual(res_decoded.split()[0], "thanks..")
+
     # @pytest.mark.skip(reason="To be trained.")
     def test_predict_recosa(self):
         _, res = self.recosa.predict(self.ctx)
         res_decoded = self.recosa.model.tokenizer.decode(res[0])
-        print(res_decoded)
-        self.assertEqual(res_decoded.split()[0], "thanks")
+        logger.debug(res_decoded)
+        self.assertEqual(res_decoded.split()[0], "thanks.")
 
 
 if __name__ == "__main__":
