@@ -178,9 +178,10 @@ class TestDecoder(unittest.TestCase):
 
 class TestReCoSa(unittest.TestCase):
     def setUp(self):
-        self.config = Config.parse("./conf/model/ReCoSa_test.yml")
+        self.config = Config()
+        self.config.add_model("./conf/model/ReCoSa_test.yml")
         self.device = torch.device("cpu")
-        self.recosa = ReCoSA(self.config, _device=self.device)
+        self.recosa = ReCoSA(self.config.model, _device=self.device)
         self.data = TestDATA()
         pytorch_lightning.seed_everything(SEED_NUM)
 
@@ -207,7 +208,7 @@ class TestReCoSa(unittest.TestCase):
             torch.Size(
                 [
                     self.data.ctx.size()[0],
-                    self.config["vocab_size"],
+                    self.config.model.vocab_size,
                     self.data.ctx.size()[-1],
                 ]
             ),
@@ -218,7 +219,7 @@ class TestReCoSa(unittest.TestCase):
         res, res_max = self.recosa.predict(ctxs, max_seq=ctxs.shape[2])
         batch_size = self.data.ctx.shape[0]
         self.assertEqual(
-            torch.Size([batch_size, self.config["vocab_size"], ctxs.shape[2]]),
+            torch.Size([batch_size, self.config.model.vocab_size, ctxs.shape[2]]),
             res.shape,
         )
         self.assertEqual(torch.Size([batch_size, ctxs.shape[2]]), res_max.shape)

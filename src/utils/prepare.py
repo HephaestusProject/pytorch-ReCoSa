@@ -21,14 +21,14 @@ logger = getLogger(__name__)
 
 def build(opt: dict):
     logger.debug("Read Config")
-    config = Config.parse(opt["config"])
+    config = Config.add_dataset(opt["data_config"])
 
-    dpath = os.path.join(config["root"], config["target"])
+    dpath = os.path.join(config.dataset.root, config.dataset.target)
     if config.get("curl", None) is None:
         logger.warning("DownloadableFile does not exist!; Off-line Data will be used.")
         return config
     else:
-        resources = [DownloadableFile(**config["curl"])]
+        resources = [DownloadableFile(**config.dataset.curl)]
 
     logger.debug("Check built")
     if not build_data.built(dpath, version_string=opt["version"]):
@@ -42,7 +42,7 @@ def build(opt: dict):
         for downloadable_file in resources:
             downloadable_file.download_file(dpath)
 
-        build_data.untar(dpath, config["curl"]["file_name"])
+        build_data.untar(dpath, config.dataset.curl.file_name)
 
         # Mark the data as built.
         build_data.mark_done(dpath, version_string=opt["version"])
@@ -60,4 +60,4 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    build({"config": args.config_path, "version": None})
+    build({"data_config": args.config_path, "version": None})

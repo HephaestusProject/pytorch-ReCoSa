@@ -8,24 +8,56 @@ import hashlib
 import os
 import shutil
 import time
+from logging import getLogger
+from omegaconf import DictConfig, OmegaConf
 from os import stat
 from typing import Optional
-
 import requests
 import tqdm
 import yaml
 
+logger = getLogger(__name__)
+
 
 class Config:
     """
-    yaml parser
+    yaml parser using OmegaConf
     """
 
-    @staticmethod
-    def parse(cpath: str) -> dict:
-        with open(cpath) as f:
-            config = yaml.load(f, Loader=yaml.FullLoader)
-        return config
+    def __init__(self) -> None:
+        logger.info("set dataset, model, api")
+        self.configs = OmegaConf.create()
+
+    def add_dataset(self, config_path: str) -> None:
+        self.configs.update({"dataset": OmegaConf.load(config_path)})
+
+    def add_model(self, config_path: str) -> None:
+        self.configs.update({"model": OmegaConf.load(config_path)})
+
+    def add_api(self, config_path: str) -> None:
+        self.configs.update({"api": OmegaConf.load(config_path)})
+
+    def add_trainer(self, config_path: str) -> None:
+        self.configs.update({"trainer": OmegaConf.load(config_path)})
+
+    def merge(self: str) -> DictConfig:
+        return OmegaConf.merge(self.configs)
+
+    @property
+    def dataset(self):
+        return self.configs.dataset
+
+    @property
+    def model(self):
+        return self.configs.model
+
+    @property
+    def api(self):
+        return self.configs.api
+
+    @property
+    def trainer(self):
+        return self.configs.trainer
 
 
 class DownloadableFile:
