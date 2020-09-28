@@ -3,24 +3,23 @@
     To implement code for training your model.
 """
 
+from argparse import ArgumentParser, Namespace
+from logging import getLogger
+
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
+from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import Callback, ModelCheckpoint
+from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.metrics.nlp import BLEUScore
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ExponentialLR
-
-from pytorch_lightning import Trainer
-from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.callbacks import ModelCheckpoint, Callback
-from pytorch_lightning.metrics.nlp import BLEUScore
 
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
 from src.model.net import ReCoSA
 from src.utils.prepare import build
-
-from argparse import ArgumentParser, Namespace
-from logging import getLogger
 
 logger = getLogger(__name__)
 

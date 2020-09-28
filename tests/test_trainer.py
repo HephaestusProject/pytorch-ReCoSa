@@ -1,9 +1,10 @@
 import unittest
 
 import pytorch_lightning as pl
-from train import RecoSAPL
+
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
+from train import RecoSAPL
 
 
 class TestReCoSa(unittest.TestCase):

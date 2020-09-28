@@ -9,12 +9,13 @@ import os
 import shutil
 import time
 from logging import getLogger
-from omegaconf import DictConfig, OmegaConf
 from os import stat
 from typing import Optional
+
 import requests
 import tqdm
 import yaml
+from omegaconf import DictConfig, OmegaConf
 
 logger = getLogger(__name__)
 

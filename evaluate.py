@@ -3,14 +3,16 @@
     To implement code for training your model.
 """
 
-from src.core.build_data import Config
-from src.utils.prepare import build
-from src.data import UbuntuDataLoader, UbuntuDataSet, collate
-from train import RecoSAPL
-import pytorch_lightning as pl
-from logging import getLogger
-from pytorch_lightning.metrics.nlp import BLEUScore
 from argparse import ArgumentParser, Namespace
+from logging import getLogger
+
+import pytorch_lightning as pl
+from pytorch_lightning.metrics.nlp import BLEUScore
+
+from src.core.build_data import Config
+from src.data import UbuntuDataLoader, UbuntuDataSet, collate
+from src.utils.prepare import build
+from train import RecoSAPL
 
 logger = getLogger(__name__)
 

@@ -1,6 +1,7 @@
 import unittest
 
 import torch
+
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
 

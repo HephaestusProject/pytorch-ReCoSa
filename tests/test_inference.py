@@ -1,13 +1,15 @@
-import pytest
-import torch
-import pytorch_lightning
 import unittest
-from train import RecoSAPL
+from logging import getLogger
+
+import pytest
+import pytorch_lightning
+import torch
+
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
-from .test_model import SEED_NUM
+from train import RecoSAPL
 
-from logging import getLogger
+from .test_model import SEED_NUM
 
 logger = getLogger(__name__)
 
