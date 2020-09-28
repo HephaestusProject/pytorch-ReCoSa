@@ -26,7 +26,7 @@
 # python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.0.8 2>&1 | tee lightning_logs/train_v0.0.8.log
 
 # fix: LR model params & add: LR scheduler & fix: attn
-python train.py --version=v0.0.7.1 2>&1 | tee lightning_logs/train_v0.0.7.1.log
+# python train.py --version=v0.0.7.1 2>&1 | tee lightning_logs/train_v0.0.7.1.log
 
 # add: DSTC7_AVSD & fix: attn
-# python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.0.8.1 2>&1 | tee lightning_logs/train_v0.0.8.1.log
+python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.0.8.1 2>&1 | tee lightning_logs/train_v0.0.8.1.log

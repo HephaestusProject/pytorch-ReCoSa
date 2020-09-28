@@ -1,0 +1,11 @@
+# Copyright (c) HephaestusProject
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+# This your_mode.yml was made by soeque1 at 24/07/20.
+# writing configuration of your dataset.
+
+version: v0.0.7
+model_path: exp/Ubuntu/v0.0.9.1/epoch=33-val_loss=3.9162.ckpt
+ip: 127.0.0.1
+port: 8000

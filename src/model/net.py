@@ -195,14 +195,6 @@ class DecoderModule(nn.Module):
                 self.device
             )
             output, _ = self.self_attention(query, key, value, attn_mask=mask)
-            # mask = self._generate_square_subsequent_mask(seq_len)[
-            #     query.shape[0] - 1, :
-            # ].to(self.device)
-            # # batch * mask
-            # mask = mask.repeat(batch_size, 1)
-            # output, _ = self.self_attention(
-            #     query, key, value, key_padding_mask=mask.bool()
-            # )
         output = self.layer_norm1(output)
         output = self.linear1(output)
         return output
@@ -271,9 +263,6 @@ class ReCoSA(nn.Module):
             pred_res = self.inference(enc_ctx, pred_res_max, _train=False)
             current_pred_res_max = torch.argmax(pred_res[:, :, -1], dim=1).unsqueeze(1)
             pred_res_max = torch.cat([pred_res_max, current_pred_res_max], dim=1)
-            # TODO: batch_size
-            # if pred_res_max[0].tolist() == eos_token_id:
-            #     break
         return pred_res, pred_res_max[:, 1:]
 
     def decode(self, response: List[torch.Tensor]) -> str:
