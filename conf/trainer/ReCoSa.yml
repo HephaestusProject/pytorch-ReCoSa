@@ -1,0 +1,13 @@
+pl:
+    gpus: [1]
+    num_nodes: 1
+    distributed_backend: ddp
+    amp_level: O2
+    amp_backend: native
+    max_epochs: 100
+data:
+    batch_size: 128
+    num_workers: 4
+    shuffle: False
+    fast_dev_run: False
+lr: 1e-4
