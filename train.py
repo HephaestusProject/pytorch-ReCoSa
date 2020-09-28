@@ -124,7 +124,7 @@ class RecoSAPL(pl.LightningModule):
 
 
 def main(config_data_file: str, config_model_file: str, version: str) -> None:
-    config_data = build({"config": config_data_file, "version": version})
+    config_data = build({"data_config": config_data_file, "version": version})
     config_model = Config.parse(config_model_file)
 
     train_data = UbuntuDataSet(
