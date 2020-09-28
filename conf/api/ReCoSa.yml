@@ -6,6 +6,6 @@
 # writing configuration of your dataset.
 
 version: v0.0.7
-model_path: exp/Ubuntu/v0.0.9.1/epoch=33-val_loss=3.9162.ckpt
+model_path: exp/Ubuntu/v0.0.7.1/epoch=03-val_loss=4.1423.ckpt
 ip: 127.0.0.1
 port: 8000
