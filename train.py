@@ -31,6 +31,8 @@ class RecoSAPL(pl.LightningModule):
         self.config = config
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = ReCoSA(config=self.config, _device=self._device)
+        self.pred = []
+        self.target = []
 
     def forward(self, x):
         return self.model.forward()
@@ -45,8 +47,8 @@ class RecoSAPL(pl.LightningModule):
         ctx, response, target = batch
         pred = self.model(ctx, response)
         if batch_idx % 1000 == 0:
-            print(self.model.tokenizer.decode(torch.argmax(pred[0], dim=0)))
-            print(self.model.tokenizer.decode(response[0]))
+            logger.debug(self.model.tokenizer.decode(torch.argmax(pred[0], dim=0)))
+            logger.debug(self.model.tokenizer.decode(response[0]))
         loss = F.cross_entropy(pred, target, ignore_index=0)
         ppl = torch.exp(loss)
         result = pl.TrainResult(minimize=loss)
@@ -96,20 +98,21 @@ class RecoSAPL(pl.LightningModule):
             .split()
             for i in pred_sen
         ]
-        target_senctence = [
+        target_sentence = [
             self.model.tokenizer.decode(i)
             .split(self.model.tokenizer.sep_token)[0]
             .split()
             for i in target
         ]
-        bleu_score = bleuS(pred_sentence, target_senctence).to(ppl.device)
+        self.pred.extend(pred_sentence)
+        self.target.extend(target_sentence)
+        bleu_score = bleuS(pred_sentence, target_sentence).to(ppl.device)
 
         if batch_idx == 0:
-            print("pred: ", " ".join(pred_sentence[0]))
-            print("target: ", " ".join(target_senctence[0]))
+            logger.debug("idx: ", batch_idx)
+            logger.debug("pred: ", " ".join(pred_sentence[0]))
+            logger.debug("target: ", " ".join(target_sentence[0]))
 
-        # TO BE FIXED:
-        # PPL, BLEU (for corpus)
         result.log_dict(
             {"val_loss_gen": loss, "val_ppl_gen": ppl, "val_bleu_gen": bleu_score},
             prog_bar=True,

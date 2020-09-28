@@ -32,7 +32,7 @@ def build(opt: dict):
 
     logger.debug("Check built")
     if not build_data.built(dpath, version_string=opt["version"]):
-        print("[building data: " + dpath + "]")
+        logger.info("[building data: " + dpath + "]")
         if build_data.built(dpath):
             # An older version exists, so remove these outdated files.
             build_data.remove_dir(dpath)

@@ -59,7 +59,7 @@ class DownloadableFile:
                     "does not match the expected checksum. Please try again. ]"
                 )
             else:
-                print("[ Checksum Successful ]")
+                logger.info("[ Checksum Successful ]")
 
 
 def download(url, path: str, fname: str, redownload: str = False) -> None:
@@ -70,7 +70,7 @@ def download(url, path: str, fname: str, redownload: str = False) -> None:
     """
     outfile = os.path.join(path, fname)
     download = not os.path.isfile(outfile) or redownload
-    print("[ downloading: " + url + " to " + outfile + " ]")
+    logger.info("[ downloading: " + url + " to " + outfile + " ]")
     retry = 5
     exp_backoff = [2 ** r for r in reversed(range(retry))]
 
@@ -124,10 +124,10 @@ def download(url, path: str, fname: str, redownload: str = False) -> None:
                 retry -= 1
                 pbar.clear()
                 if retry >= 0:
-                    print("Connection error, retrying. (%d retries left)" % retry)
+                    logger.info("Connection error, retrying. (%d retries left)" % retry)
                     time.sleep(exp_backoff[retry])
                 else:
-                    print("Retried too many times, stopped retrying.")
+                    logger.info("Retried too many times, stopped retrying.")
             finally:
                 if response:
                     response.close()
@@ -205,7 +205,7 @@ def untar(path: str, fname: str, deleteTar: bool = True) -> None:
     :param bool deleteTar:
         If true, the archive will be deleted after extraction.
     """
-    print("unpacking " + fname)
+    logger.info("unpacking " + fname)
     fullpath = os.path.join(path, fname)
     shutil.unpack_archive(fullpath, path)
     if deleteTar:

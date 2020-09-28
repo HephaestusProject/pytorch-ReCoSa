@@ -9,15 +9,18 @@ from src.data import UbuntuDataLoader, UbuntuDataSet, collate
 from train import RecoSAPL
 import pytorch_lightning as pl
 from logging import getLogger
+from pytorch_lightning.metrics.nlp import BLEUScore
 from argparse import ArgumentParser, Namespace
 
 logger = getLogger(__name__)
 
 
-def main(config_data_file: str, config_model_file: str, version: str) -> None:
+def main(
+    config_data_file: str, config_model_file: str, config_api_file: str, version: str
+) -> None:
     config_data = build({"config": config_data_file, "version": version})
     config_model = Config.parse(config_model_file)
-    config_api = Config.parse("./conf/api/ReCoSa.yml")
+    config_api = Config.parse(config_api_file)
 
     val_data = UbuntuDataSet(
         config_data["root"] + config_data["target"],
@@ -49,10 +52,13 @@ def main(config_data_file: str, config_model_file: str, version: str) -> None:
         max_epochs=1,
         logger=False,
         checkpoint_callback=False,
-        fast_dev_run=True
+        #fast_dev_run=True
     )
     test_result = trainer.test(model, test_dataloaders=val_dataloader)
     logger.info(test_result)
+    bleuS = BLEUScore()
+    bleu_score = bleuS(model.pred, model.target)
+    logger.info(bleu_score)
 
 
 if __name__ == "__main__":
@@ -63,6 +69,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config_model_file", default="./conf/model/ReCoSa.yml", type=str
     )
+    parser.add_argument("--config_api_file", default="./conf/api/ReCoSa.yml", type=str)
     parser.add_argument("--version", default="v0.0.8.1", type=str)
     args = parser.parse_args()
-    main(args.config_data_file, args.config_model_file, args.version)
+    main(
+        args.config_data_file,
+        args.config_model_file,
+        args.config_api_file,
+        args.version,
+    )
