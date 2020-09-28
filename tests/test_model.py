@@ -120,7 +120,7 @@ class TestResponseEncoder(unittest.TestCase):
         self.assertEqual(self.data.response.shape, torch.Size([1, 7]))
 
     def test_init(self):
-        self.assertAlmostEqual(
+        self.assertListEqual(
             self.enc.self_attention.in_proj_weight[0, :5].tolist(),
             [
                 0.015318885445594788,
