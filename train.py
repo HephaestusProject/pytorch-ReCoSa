@@ -123,42 +123,50 @@ class RecoSAPL(pl.LightningModule):
         return result
 
 
-def main(config_data_file: str, config_model_file: str, version: str) -> None:
-    config_data = build({"data_config": config_data_file, "version": version})
-    config_model = Config.parse(config_model_file)
+def main(
+    config_data_file: str,
+    config_model_file: str,
+    config_trainer_file: str,
+    version: str,
+) -> None:
+
+    # TODO: to be removed
+    _ = build({"data_config": config_data_file, "version": version})
+    cfg = Config()
+    cfg.add_dataset(config_data_file)
+    cfg.add_model(config_model_file)
+    cfg.add_trainer(config_trainer_file)
 
     train_data = UbuntuDataSet(
-        config_data["root"] + config_data["target"],
-        config_data["raw"]["train"],
-        config_model["max_seq"],
-        config_data["target"],
+        cfg.dataset.root + cfg.dataset.target,
+        cfg.dataset.raw.train,
+        cfg.model.max_seq,
+        cfg.dataset.target,
     )
     val_data = UbuntuDataSet(
-        config_data["root"] + config_data["target"],
-        config_data["raw"]["val"],
-        config_model["max_seq"],
-        config_data["target"],
+        cfg.dataset.root + cfg.dataset.target,
+        cfg.dataset.raw.val,
+        cfg.model.max_seq,
+        cfg.dataset.target,
     )
 
     train_dataloader = UbuntuDataLoader(
         train_data,
-        batch_size=config_model["batch_size"],
+        batch_size=cfg.model.batch_size,
         shuffle=True,
         num_workers=8,
         collate_fn=collate,
     )
     val_dataloader = UbuntuDataLoader(
         val_data,
-        batch_size=config_model["batch_size"],
+        batch_size=cfg.model.batch_size,
         shuffle=False,
         num_workers=8,
         collate_fn=collate,
     )
-    logger = TensorBoardLogger(
-        save_dir="exp", name=config_data["target"], version=version
-    )
+    logger = TensorBoardLogger(save_dir="exp", name=cfg.dataset.target, version=version)
 
-    prefix = f"exp/{config_data['target']}/{version}/"
+    prefix = f"exp/{cfg.dataset.target}/{version}/"
     suffix = "{epoch:02d}-{val_loss:.4f}"
     filepath = prefix + suffix
     checkpoint_callback = ModelCheckpoint(
@@ -169,19 +177,9 @@ def main(config_data_file: str, config_model_file: str, version: str) -> None:
         verbose=True,
     )
 
-    model = RecoSAPL(config_model)
-
-    trainer_params = {
-        "gpus": [1],
-        "num_nodes": 1,
-        "distributed_backend": "ddp",
-        "amp_level": "O2",
-        "amp_backend": "native",
-    }
-
+    model = RecoSAPL(cfg.model)
     trainer = pl.Trainer(
-        **trainer_params,
-        max_epochs=100,
+        **cfg.trainer.pl,
         logger=logger,
         checkpoint_callback=checkpoint_callback,
     )
@@ -196,6 +194,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config_model_file", default="./conf/model/ReCoSa.yml", type=str
     )
+    parser.add_argument(
+        "--config_trainer_file", default="./conf/trainer/ReCoSa.yml", type=str
+    )
     parser.add_argument("--version", default="v0.0.1", type=str)
     args = parser.parse_args()
-    main(args.config_data_file, args.config_model_file, args.version)
+    main(
+        args.config_data_file,
+        args.config_model_file,
+        args.config_trainer_file,
+        args.version,
+    )
