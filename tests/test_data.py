@@ -83,8 +83,7 @@ class TestDataSet(unittest.TestCase):
                 torch.Size([self.test_batch_size, self.cfg.model.max_seq]),
             )
             self.assertEqual(
-                cands.shape,
-                torch.Size([self.test_batch_size, self.cfg.model.max_seq]),
+                cands.shape, torch.Size([self.test_batch_size, self.cfg.model.max_seq]),
             )
             break
 

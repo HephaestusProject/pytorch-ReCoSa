@@ -3,6 +3,7 @@
     To implement code for training your model.
 """
 
+import logging
 from argparse import ArgumentParser, Namespace
 from logging import getLogger
 
@@ -55,7 +56,7 @@ def main(
     trainer = pl.Trainer(**cfg.trainer.pl, logger=False, checkpoint_callback=False)
     test_result = trainer.test(model, test_dataloaders=val_dataloader)
     logger.info(test_result)
-    bleuS = BLEUScore()
+    bleuS = BLEUScore(n_gram=2, smooth=True)
     bleu_score = bleuS(model.pred, model.target)
     logger.info(bleu_score)
 

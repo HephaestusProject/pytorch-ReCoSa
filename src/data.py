@@ -14,7 +14,7 @@ from typing import Callable, List, Tuple
 import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
-from transformers import BertModel, BertTokenizer
+from transformers import GPT2Tokenizer
 
 from src.core.build_data import Config
 
@@ -127,18 +127,37 @@ class UbuntuDataSet(Dataset):
             self._corpus = dataload_DSTC7_AVSD(self._path)
         else:
             raise NotImplementedError
-        self._tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+        self._tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+        self._tokenizer.bos_token = "<|start|>"
+        self._tokenizer.eos_token = "<|end|>"
+        self._tokenizer.pad_token = "<|pad|>"
+        self._tokenizer.unk_token = "<|unk|>"
+        self._tokenizer.add_tokens(
+            [
+                self._tokenizer.bos_token,
+                self._tokenizer.eos_token,
+                self._tokenizer.pad_token,
+                self._tokenizer.unk_token,
+            ]
+        )
+        self._tokenizer.padding_side = "right"
+        self._tokenizer.save_pretrained("./conf/tokenizer")
         self._max_seq = _max_seq
 
     def __len__(self) -> int:
         return len(self._corpus)
 
     def encode_fn(self, _input: str) -> List[int]:
+        _input = "{bos} {sentence} {eos}".format(
+            bos=self._tokenizer.bos_token,
+            sentence=_input,
+            eos=self._tokenizer.eos_token,
+        )
         return self._tokenizer.encode(
             _input,
-            add_special_tokens=True,
+            add_special_tokens=False,
             max_length=self._max_seq,
-            pad_to_max_length=True,
+            padding="max_length",
             truncation=True,
         )
 
@@ -149,7 +168,7 @@ class UbuntuDataSet(Dataset):
         return [self.encode_fn(i) for i in cands]
 
     def get_cands_for_generation(self, response: str) -> torch.Tensor:
-        return self.encode_fn(response)[1:] + [self._tokenizer.pad_token_id]
+        return self.encode_fn(response)[1:] + [self._tokenizer.eos_token_id]
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         dataset = self._corpus[idx]
@@ -164,7 +183,7 @@ class UbuntuDataLoader(DataLoader):
         super(UbuntuDataLoader, self).__init__(*args, **kwargs)
 
 
-class Tokenizer(BertTokenizer):
+class Tokenizer(GPT2Tokenizer):
     def __init__(self, vocab_file: str, *args, **kwargs):
         super(Tokenizer, self).__init__(vocab_file, *args, **kwargs)
 

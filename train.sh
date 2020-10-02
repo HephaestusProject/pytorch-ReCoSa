@@ -1,3 +1,5 @@
+pip install -r requirements.txt
+
 # debug
 # python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v.test 2>&1 | tee lightning_logs/train_v.test.log
 
@@ -32,4 +34,8 @@
 #python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.0.8.1 2>&1 | tee lightning_logs/train_v0.0.8.1.log
 
 # refactor: omegaconf
-python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.0.8.2 2>&1 | tee lightning_logs/train_v0.0.8.2.log
+# python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.0.8.2 2>&1 | tee lightning_logs/train_v0.0.8.2.log
+
+# gpt2-tokenizer
+# python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.0.9.avsd 2>&1 | tee lightning_logs/train_v0.0.9.avsd.log
+python train.py --config_data_file ./conf/dataset/ubuntu.yml --version=v0.0.9 2>&1 | tee lightning_logs/train_v0.0.9.log
