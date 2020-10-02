@@ -4,11 +4,11 @@
 """
 
 import logging
-import torch
 from argparse import ArgumentParser, Namespace
 from logging import getLogger
 
 import pytorch_lightning as pl
+import torch
 import torch.nn.functional as F
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint
@@ -188,7 +188,9 @@ def main(
 
     model = RecoSAPL(cfg.model)
     trainer = pl.Trainer(
-        **cfg.trainer.pl, logger=logger, checkpoint_callback=checkpoint_callback,
+        **cfg.trainer.pl,
+        logger=logger,
+        checkpoint_callback=checkpoint_callback,
     )
     trainer.fit(model, train_dataloader, val_dataloader)
 
