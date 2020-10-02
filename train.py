@@ -3,11 +3,12 @@
     To implement code for training your model.
 """
 
+import logging
+import torch
 from argparse import ArgumentParser, Namespace
 from logging import getLogger
 
 import pytorch_lightning as pl
-import torch
 import torch.nn.functional as F
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint
@@ -22,6 +23,7 @@ from src.model.net import ReCoSA
 from src.utils.prepare import build
 
 logger = getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 class RecoSAPL(pl.LightningModule):
@@ -46,9 +48,11 @@ class RecoSAPL(pl.LightningModule):
         ctx, response, target = batch
         pred = self.model(ctx, response)
         if batch_idx % 1000 == 0:
-            logger.debug(self.model.tokenizer.decode(torch.argmax(pred[0], dim=0)))
-            logger.debug(self.model.tokenizer.decode(response[0]))
-        loss = F.cross_entropy(pred, target, ignore_index=0)
+            logger.info(self.model.tokenizer.decode(torch.argmax(pred[0], dim=0)))
+            logger.info(self.model.tokenizer.decode(response[0]))
+        loss = F.cross_entropy(
+            pred, target, ignore_index=self.model.tokenizer.pad_token_id
+        )
         ppl = torch.exp(loss)
         result = pl.TrainResult(minimize=loss)
         result.log_dict(
@@ -64,7 +68,9 @@ class RecoSAPL(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         ctx, response, target = batch
         pred = self.model(ctx, response)
-        loss = F.cross_entropy(pred, target, ignore_index=0)
+        loss = F.cross_entropy(
+            pred, target, ignore_index=self.model.tokenizer.pad_token_id
+        )
         ppl = torch.exp(loss)
         result = pl.EvalResult(checkpoint_on=loss)
         result.log_dict(
@@ -83,34 +89,37 @@ class RecoSAPL(pl.LightningModule):
         return [opt], [scheduler]
 
     def test_step(self, batch, batch_idx):
-        bleuS = BLEUScore()
+        bleuS = BLEUScore(n_gram=4, smooth=True)
         ctx, _, target = batch
         pred, pred_sen = self.model.predict(
             ctx, batch_size=ctx.shape[0], max_seq=ctx.shape[2]
         )
-        loss = F.cross_entropy(pred, target, ignore_index=0)
+        loss = F.cross_entropy(
+            pred, target, ignore_index=self.model.tokenizer.pad_token_id
+        )
         ppl = torch.exp(loss)
         result = pl.EvalResult(checkpoint_on=loss)
         pred_sentence = [
             self.model.tokenizer.decode(i)
-            .split(self.model.tokenizer.sep_token)[0]
+            .split(self.model.tokenizer.eos_token)[0]
             .split()
             for i in pred_sen
         ]
         target_sentence = [
             self.model.tokenizer.decode(i)
-            .split(self.model.tokenizer.sep_token)[0]
+            .split(self.model.tokenizer.eos_token)[0]
             .split()
             for i in target
         ]
+        target_sentence_list = [[i] for i in target_sentence]
         self.pred.extend(pred_sentence)
-        self.target.extend(target_sentence)
-        bleu_score = bleuS(pred_sentence, target_sentence).to(ppl.device)
+        self.target.extend(target_sentence_list)
+        bleu_score = bleuS(pred_sentence, target_sentence_list).to(ppl.device)
 
         if batch_idx == 0:
-            logger.debug("idx: ", batch_idx)
-            logger.debug("pred: ", " ".join(pred_sentence[0]))
-            logger.debug("target: ", " ".join(target_sentence[0]))
+            logger.info("idx: " + str(batch_idx))
+            logger.info("pred: " + " ".join(pred_sentence[0]))
+            logger.info("target: " + " ".join(target_sentence[0]))
 
         result.log_dict(
             {"val_loss_gen": loss, "val_ppl_gen": ppl, "val_bleu_gen": bleu_score},
@@ -179,9 +188,7 @@ def main(
 
     model = RecoSAPL(cfg.model)
     trainer = pl.Trainer(
-        **cfg.trainer.pl,
-        logger=logger,
-        checkpoint_callback=checkpoint_callback,
+        **cfg.trainer.pl, logger=logger, checkpoint_callback=checkpoint_callback,
     )
     trainer.fit(model, train_dataloader, val_dataloader)
 

@@ -3,16 +3,14 @@
     To implement code of your network using operation from ops.py.
 """
 
-import random
+import logging
 from logging import getLogger
-from typing import List, Optional
+from typing import List
 
-import pytorch_lightning
 import torch
-from torch import dropout, nn, tensor
-from torch.functional import Tensor
-from torch.nn import init
-from transformers import BertTokenizer
+from torch import nn, tensor
+from transformers import GPT2Tokenizer
+from transformers.modeling_gpt2 import Block
 
 from src.model.ops import PositionEmbedding
 
@@ -46,7 +44,7 @@ class EncoderCtxModule(nn.Module):
         self.embed_size = embed_size
         self.out_size = out_size
 
-        self.emb = nn.Embedding(vocab_size, embed_size, padding_idx=0)
+        self.emb = nn.Embedding(vocab_size, embed_size)
         self.rnn = nn.LSTM(embed_size, hidden_size, self.n_layers, dropout=0.1)
         self.position_embeddings = PositionEmbedding(hidden_size)
         self.self_attention_context = nn.MultiheadAttention(hidden_size, 8)
@@ -107,7 +105,7 @@ class EncoderResponseModule(nn.Module):
         super(EncoderResponseModule, self).__init__()
         self.device = _device
         self.hidden_size = hidden_size
-        self.emb = nn.Embedding(vocab_size, hidden_size, padding_idx=0)
+        self.emb = nn.Embedding(vocab_size, hidden_size)
         self.position_embeddings = PositionEmbedding(hidden_size)
         self.self_attention = nn.MultiheadAttention(hidden_size, 8)
         self.init_w()
@@ -161,7 +159,7 @@ class DecoderModule(nn.Module):
         **kwargs
     ) -> None:
         super(DecoderModule, self).__init__()
-        self.embed = nn.Embedding(output_size, embed_size, padding_idx=0)
+        self.embed = nn.Embedding(output_size, embed_size)
         self.self_attention = nn.MultiheadAttention(hidden_size, 8)
         self.layer_norm1 = nn.LayerNorm(hidden_size)
         self.linear1 = nn.Linear(hidden_size, out_size)
@@ -203,7 +201,7 @@ class DecoderModule(nn.Module):
 class ReCoSA(nn.Module):
     def __init__(self, config: dict, _device: torch.device) -> None:
         super().__init__()
-        self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+        self.tokenizer = GPT2Tokenizer.from_pretrained("./conf/tokenizer")
         self.vocab_size = config["vocab_size"]
         assert len(self.tokenizer) == self.vocab_size
 
@@ -255,8 +253,8 @@ class ReCoSA(nn.Module):
         return dec_res
 
     def predict(self, ctx: torch.Tensor, batch_size: int = 1, max_seq: int = 50) -> str:
-        bos_token_id = 101
-        eos_token_id = 102
+        bos_token_id = self.tokenizer.bos_token_id
+        # eos_token_id = self.tokenizer.eos_token_id
         pred_res_max = torch.tensor([[bos_token_id]] * batch_size).to(self._device)
         enc_ctx = self.encoderCtx(ctx)
         for _ in range(max_seq):

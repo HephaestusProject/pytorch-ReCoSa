@@ -17,27 +17,27 @@ class TestDATA:
     ctx = torch.tensor(
         [
             [
-                [101, 3087, 4282, 2339, 2026, 4518, 102],
-                [101, 1045, 2275, 2039, 2026, 10751, 102],
+                [50257, 1092, 505, 4206, 1521, 616, 4283, 50258],
+                [50257, 72, 900, 510, 616, 289, 67, 50258],
             ]
         ]
     )
     # batch, seq_len
-    response = torch.tensor([[101, 3087, 4282, 2339, 2026, 4518, 102]])
-    dec_input = torch.rand([7, 1, 256])
+    response = torch.tensor([[50257, 3087, 4282, 2339, 2026, 4518, 27, 50258]])
+    dec_input = torch.rand([8, 1, 256])
 
-    # batch, turn, seq_len
-    assert ctx.shape == torch.Size([1, 2, 7])
+    # # batch, turn, seq_len
+    assert ctx.shape == torch.Size([1, 2, 8])
     # batch, seq_len
-    assert response.shape == torch.Size([1, 7])
+    assert response.shape == torch.Size([1, 8])
     # seq_len, batch, hidden_size
-    assert dec_input.shape == torch.Size([7, 1, 256])
+    assert dec_input.shape == torch.Size([8, 1, 256])
 
 
 class TestCtxEncoder(unittest.TestCase):
     def setUp(self):
         self.device = torch.device("cpu")
-        self.vocab_size = 15000
+        self.vocab_size = 50260
         self.emb_size = 128
         self.hidden_size = 256
         self.out_size = 128
@@ -67,11 +67,11 @@ class TestCtxEncoder(unittest.TestCase):
         self.assertAlmostEqual(
             self.enc.rnn.weight_ih_l0[0][:5].tolist(),
             [
-                -0.04221362620592117,
-                -0.052751462906599045,
-                0.0416913703083992,
-                0.014486987143754959,
-                0.029713977128267288,
+                0.02435922436416149,
+                -0.0651131197810173,
+                -0.017832227051258087,
+                -0.03465227782726288,
+                0.006318099796772003,
             ],
         )
 
@@ -82,18 +82,18 @@ class TestCtxEncoder(unittest.TestCase):
                 self.assertAlmostEqual(
                     param[0][:5].tolist(),
                     [
-                        -0.04221362620592117,
-                        -0.052751462906599045,
-                        0.0416913703083992,
-                        0.014486987143754959,
-                        0.029713977128267288,
+                        0.02435922436416149,
+                        -0.0651131197810173,
+                        -0.017832227051258087,
+                        -0.03465227782726288,
+                        0.006318099796772003,
                     ],
                 )
             else:
                 pass
 
     def test_input(self):
-        self.assertEqual(self.data.ctx.shape, torch.Size([1, 2, 7]))
+        self.assertEqual(self.data.ctx.shape, torch.Size([1, 2, 8]))
 
     def test_forward_enc(self):
         output = self.enc(self.data.ctx.to(self.device))
@@ -109,7 +109,7 @@ class TestResponseEncoder(unittest.TestCase):
     def setUp(self):
         self.device = torch.device("cpu")
         self.hidden_size = 256
-        self.vocab_size = 15000
+        self.vocab_size = 50260
         self.enc = EncoderResponseModule(
             vocab_size=self.vocab_size,
             hidden_size=self.hidden_size,
@@ -119,17 +119,17 @@ class TestResponseEncoder(unittest.TestCase):
         pytorch_lightning.seed_everything(SEED_NUM)
 
     def test_input(self):
-        self.assertEqual(self.data.response.shape, torch.Size([1, 7]))
+        self.assertEqual(self.data.response.shape, torch.Size([1, 8]))
 
     def test_init(self):
         self.assertListEqual(
             self.enc.self_attention.in_proj_weight[0, :5].tolist(),
             [
-                0.015318885445594788,
-                0.048414446413517,
-                -0.022115185856819153,
-                0.02594170719385147,
-                -0.0734342709183693,
+                0.08403340727090836,
+                0.08444962650537491,
+                0.011402380652725697,
+                0.056572891771793365,
+                -0.06264135986566544,
             ],
         )
 
@@ -192,12 +192,12 @@ class TestReCoSa(unittest.TestCase):
         # turns, batch, seq_len
         # 1th-turn
         self.assertEqual(
-            "[CLS] anyone knows why my stock [SEP]",
+            "<|start|> anyone knows why my stock <|end|>",
             self.recosa.tokenizer.decode(self.data.ctx[0, 0, :]),
         )
         # 2nd-turn
         self.assertEqual(
-            "[CLS] i set up my hd [SEP]",
+            "<|start|> i set up my hd <|end|>",
             self.recosa.tokenizer.decode(self.data.ctx[0, 1, :]),
         )
 

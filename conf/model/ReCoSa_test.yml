@@ -6,7 +6,7 @@
 # writing configuration of your dataset.
 
 output_size: 512
-vocab_size: 30522
+vocab_size: 50260
 embed_size: 512
 utter_hidden_size: 512
 utter_n_layer: 1
