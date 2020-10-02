@@ -8,20 +8,21 @@ from src.data import UbuntuDataLoader, UbuntuDataSet, collate
 
 class TestDataSet(unittest.TestCase):
     def setUp(self):
-        self.data_config = Config.parse("./conf/dataset/ubuntu_test.yml")
-        self.model_config = Config.parse("./conf/model/ReCoSa_test.yml")
+        self.cfg = Config()
+        self.cfg.add_dataset("./conf/dataset/ubuntu_test.yml")
+        self.cfg.add_model("./conf/model/ReCoSa_test.yml")
         self.data = UbuntuDataSet(
-            folderpath=self.data_config["root"] + self.data_config["target"],
-            filepath=self.data_config["raw"]["train"],
+            folderpath=self.cfg.dataset.root + self.cfg.dataset.target,
+            filepath=self.cfg.dataset.raw.train,
         )
         self.test_batch_size = 2
 
     def test_config(self):
-        self.assertEqual(list(self.data_config.keys()), ["root", "target", "raw"])
+        self.assertEqual(list(self.cfg.dataset.keys()), ["root", "target", "raw"])
 
     def test_model(self):
         self.assertEqual(
-            list(self.model_config.keys()),
+            list(self.cfg.model.keys()),
             [
                 "output_size",
                 "vocab_size",
@@ -47,16 +48,16 @@ class TestDataSet(unittest.TestCase):
         self.assertEqual(instance_len, len(instance))
 
         # ctx
-        self.assertEqual(self.model_config["max_turns"], len(ctxs))
+        self.assertEqual(self.cfg.model.max_turns, len(ctxs))
 
         for ctx in ctxs:
-            self.assertEqual(self.model_config["max_seq"], len(ctx))
+            self.assertEqual(self.cfg.model.max_seq, len(ctx))
 
         # response
-        self.assertEqual(self.model_config["max_seq"], len(response))
+        self.assertEqual(self.cfg.model.max_seq, len(response))
 
         # target
-        self.assertEqual(self.model_config["max_seq"], len(target))
+        self.assertEqual(self.cfg.model.max_seq, len(target))
 
     def test_dataloader(self):
         dataloader = UbuntuDataLoader(
@@ -72,18 +73,18 @@ class TestDataSet(unittest.TestCase):
                 torch.Size(
                     [
                         self.test_batch_size,
-                        self.model_config["max_turns"],
-                        self.model_config["max_seq"],
+                        self.cfg.model.max_turns,
+                        self.cfg.model.max_seq,
                     ]
                 ),
             )
             self.assertEqual(
                 response.shape,
-                torch.Size([self.test_batch_size, self.model_config["max_seq"]]),
+                torch.Size([self.test_batch_size, self.cfg.model.max_seq]),
             )
             self.assertEqual(
                 cands.shape,
-                torch.Size([self.test_batch_size, self.model_config["max_seq"]]),
+                torch.Size([self.test_batch_size, self.cfg.model.max_seq]),
             )
             break
 

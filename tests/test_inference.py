@@ -1,13 +1,15 @@
-import pytest
-import torch
-import pytorch_lightning
 import unittest
-from train import RecoSAPL
+from logging import getLogger
+
+import pytest
+import pytorch_lightning
+import torch
+
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
-from .test_model import SEED_NUM
+from train import RecoSAPL
 
-from logging import getLogger
+from .test_model import SEED_NUM
 
 logger = getLogger(__name__)
 
@@ -15,16 +17,17 @@ logger = getLogger(__name__)
 class TestReCoSaInference(unittest.TestCase):
     def setUp(self):
         self.device = torch.device("cpu")
-        config_data = Config.parse("./conf/dataset/ubuntu_test.yml")
-        config_model = Config.parse("./conf/model/ReCoSa_test.yml")
-        config_api = Config.parse("./conf/api/ReCoSa.yml")
+        self.config = Config()
+        self.config.add_dataset("./conf/dataset/ubuntu_test.yml")
+        self.config.add_model("./conf/model/ReCoSa_test.yml")
+        self.config.add_api("./conf/api/ReCoSa.yml")
         self.recosa = RecoSAPL.load_from_checkpoint(
-            config_api["model_path"], **config_model
+            self.config.api.model_path, **self.config.model
         )
         data = UbuntuDataSet(
-            config_data["root"] + config_data["target"],
-            config_data["raw"]["train"],
-            config_model["max_seq"],
+            self.config.dataset.root + self.config.dataset.target,
+            self.config.dataset.raw.train,
+            self.config.model.max_seq,
         )
         dataloader = UbuntuDataLoader(
             data,
