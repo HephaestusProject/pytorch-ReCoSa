@@ -5,8 +5,7 @@ import pytorch_lightning
 import torch
 
 from src.core.build_data import Config
-from src.model.net import (DecoderModule, EncoderCtxModule,
-                           EncoderResponseModule, ReCoSA)
+from src.model.net import DecoderModule, EncoderCtxModule, EncoderResponseModule, ReCoSA
 
 SEED_NUM = 42
 
