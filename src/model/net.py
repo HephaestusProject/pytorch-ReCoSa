@@ -6,6 +6,7 @@
 import logging
 from logging import getLogger
 from typing import List
+from numpy.core.multiarray import concatenate
 
 import torch
 from torch import nn, tensor
@@ -34,6 +35,7 @@ class EncoderCtxModule(nn.Module):
         hidden_size: int,
         out_size: int,
         n_layers: int,
+        n_positions: int,
         _device: torch.device,
         *args,
         **kwargs
@@ -43,10 +45,13 @@ class EncoderCtxModule(nn.Module):
         self.hidden_size = hidden_size
         self.embed_size = embed_size
         self.out_size = out_size
+        self.n_positions = n_positions
 
         self.emb = nn.Embedding(vocab_size, embed_size)
-        self.rnn = nn.LSTM(embed_size, hidden_size, self.n_layers, dropout=0.1)
-        self.position_embeddings = PositionEmbedding(hidden_size)
+        self.rnn = nn.LSTM(embed_size, hidden_size, self.n_layers)  # , dropout=0.1)
+        self.position_embeddings = nn.Embedding(
+            n_positions, hidden_size
+        )  # PositionEmbedding(hidden_size)
         self.self_attention_context = nn.MultiheadAttention(hidden_size, 8)
         self.layer_norm1 = nn.LayerNorm(hidden_size)
         self.linear1 = nn.Linear(hidden_size, out_size)
@@ -88,8 +93,13 @@ class EncoderCtxModule(nn.Module):
             turns.append(hidden[0].sum(axis=0))
         turns = torch.stack(turns)
         turns = turns.transpose(0, 1)
-
-        turns = self.position_embeddings(turns)
+        pos = torch.cat(
+            src.shape[0]
+            * [torch.arange(self.n_positions, dtype=torch.long, device=self.device)]
+        ).reshape(turns.shape[1], -1)
+        pos_emb = self.position_embeddings(pos).transpose(0, 1)
+        # turns = torch.cat([turns, pos_emb], dim=-1)
+        turns += pos_emb
         context, _ = self.self_attention_context(turns, turns, turns)
         turns = self.layer_norm1(turns)
         turns = self.linear1(context + turns)
@@ -100,13 +110,22 @@ class EncoderResponseModule(nn.Module):
     """EncoderResponseModule"""
 
     def __init__(
-        self, vocab_size: int, hidden_size: int, _device: torch.device, *args, **kwargs
+        self,
+        vocab_size: int,
+        hidden_size: int,
+        n_positions: int,
+        _device: torch.device,
+        *args,
+        **kwargs
     ) -> None:
         super(EncoderResponseModule, self).__init__()
         self.device = _device
         self.hidden_size = hidden_size
+        self.n_positions = n_positions
         self.emb = nn.Embedding(vocab_size, hidden_size)
-        self.position_embeddings = PositionEmbedding(hidden_size)
+        self.position_embeddings = nn.Embedding(
+            n_positions, hidden_size
+        )  # PositionEmbedding(hidden_size)
         self.self_attention = nn.MultiheadAttention(hidden_size, 8)
         self.init_w()
 
@@ -132,7 +151,13 @@ class EncoderResponseModule(nn.Module):
             see the docs in Transformer class.
         """
         embedded = self.emb(src)
-        response = self.position_embeddings(embedded).transpose(0, 1)
+        pos = torch.cat(
+            src.shape[0]
+            * [torch.arange(self.n_positions, dtype=torch.long, device=self.device)]
+        ).reshape(src.shape[0], -1)
+        pos_emb = self.position_embeddings(pos)
+        # response = torch.cat([embedded, pos_emb], dim=-1)
+        response = (embedded + pos_emb[:, : embedded.shape[1], :]).transpose(0, 1)
         mask = self._generate_square_subsequent_mask(src.shape[1]).to(self.device)
         attn, _ = self.self_attention(response, response, response, attn_mask=mask)
         return attn
@@ -212,12 +237,14 @@ class ReCoSA(nn.Module):
             hidden_size=config["utter_hidden_size"],
             out_size=config["out_size"],
             n_layers=config["utter_n_layer"],
+            n_positions=config["max_seq"],
             _device=_device,
         )
 
         self.encoderResponse = EncoderResponseModule(
             vocab_size=config["vocab_size"],
             hidden_size=config["out_size"],
+            n_positions=config["max_seq"],
             _device=_device,
         )
 
