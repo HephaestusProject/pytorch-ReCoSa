@@ -142,10 +142,7 @@ class RecoSAPL(pl.LightningModule):
             logger.info("target: " + " ".join(target_sentence[0]))
 
         result.log_dict(
-            {
-                "val_loss_gen": loss,
-                "val_ppl_gen": ppl,
-            },  # , "val_bleu_gen": bleu_score},
+            {"val_loss_gen": loss, "val_ppl_gen": ppl, "val_bleu_gen": bleu_score},
             prog_bar=True,
             logger=True,
             on_step=False,
