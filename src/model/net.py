@@ -36,6 +36,7 @@ class EncoderCtxModule(nn.Module):
         out_size: int,
         n_layers: int,
         n_positions: int,
+        padding_idx: int,
         _device: torch.device,
         *args,
         **kwargs
@@ -46,8 +47,9 @@ class EncoderCtxModule(nn.Module):
         self.embed_size = embed_size
         self.out_size = out_size
         self.n_positions = n_positions
+        self.padding_idx = padding_idx
 
-        self.emb = nn.Embedding(vocab_size, embed_size)
+        self.emb = nn.Embedding(vocab_size, embed_size, padding_idx=padding_idx)
         self.rnn = nn.LSTM(embed_size, hidden_size, self.n_layers)  # , dropout=0.1)
         self.position_embeddings = nn.Embedding(
             n_positions, hidden_size
@@ -69,14 +71,19 @@ class EncoderCtxModule(nn.Module):
             elif "weight" in name:
                 nn.init.xavier_normal(param)
 
-    def forward_rnn(self, src: List[tensor], hidden: tuple = None):
-        embedded = self.emb(src)
+    def forward_rnn(
+        self, src: List[tensor], hidden: tuple = None, _length: List = None
+    ):
+        embedded = self.emb(src).transpose(0, 1)
+        embedded = torch.nn.utils.rnn.pack_padded_sequence(
+            embedded, _length, batch_first=False, enforce_sorted=False
+        )
         if hidden is None:
             hidden = (
-                torch.zeros(self.n_layers, src.shape[-1], self.hidden_size).to(
+                torch.zeros(self.n_layers, src.shape[0], self.hidden_size).to(
                     self.device
                 ),
-                torch.zeros(self.n_layers, src.shape[-1], self.hidden_size).to(
+                torch.zeros(self.n_layers, src.shape[0], self.hidden_size).to(
                     self.device
                 ),
             )
@@ -84,19 +91,27 @@ class EncoderCtxModule(nn.Module):
         return hidden
 
     def forward(self, src: List[tensor], hidden: tuple = None):
-        turn_size = len(src)
+        turn_size = src.shape[1]
         turns = []
         hidden = None
         for i in range(turn_size):
             # hidden = h_0, c_0
-            hidden = self.forward_rnn(src[i], hidden)
+            turn = src[:, i, :]
+            input_lengths = []
+            for j_turn in turn:
+                start_padding_idx = (j_turn.data == self.padding_idx).nonzero()
+                if len(start_padding_idx) == 0:
+                    input_lengths.append(src.shape[-1])
+                else:
+                    input_lengths.append(torch.min(start_padding_idx))
+            input_lengths = torch.LongTensor(input_lengths)
+            hidden = self.forward_rnn(turn, hidden, input_lengths)
             turns.append(hidden[0].sum(axis=0))
         turns = torch.stack(turns)
-        turns = turns.transpose(0, 1)
         pos = torch.cat(
             src.shape[0]
-            * [torch.arange(self.n_positions, dtype=torch.long, device=self.device)]
-        ).reshape(turns.shape[1], -1)
+            * [torch.arange(src.shape[1], dtype=torch.long, device=self.device)]
+        ).reshape(src.shape[0], -1)
         pos_emb = self.position_embeddings(pos).transpose(0, 1)
         # turns = torch.cat([turns, pos_emb], dim=-1)
         turns += pos_emb
@@ -114,6 +129,7 @@ class EncoderResponseModule(nn.Module):
         vocab_size: int,
         hidden_size: int,
         n_positions: int,
+        padding_idx: int,
         _device: torch.device,
         *args,
         **kwargs
@@ -122,7 +138,7 @@ class EncoderResponseModule(nn.Module):
         self.device = _device
         self.hidden_size = hidden_size
         self.n_positions = n_positions
-        self.emb = nn.Embedding(vocab_size, hidden_size)
+        self.emb = nn.Embedding(vocab_size, hidden_size, padding_idx=padding_idx)
         self.position_embeddings = nn.Embedding(
             n_positions, hidden_size
         )  # PositionEmbedding(hidden_size)
@@ -157,6 +173,9 @@ class EncoderResponseModule(nn.Module):
         ).reshape(src.shape[0], -1)
         pos_emb = self.position_embeddings(pos)
         # response = torch.cat([embedded, pos_emb], dim=-1)
+        # response = torch.cat(
+        #     [embedded, pos_emb[:, : embedded.shape[1], :]], dim=-1
+        # ).transpose(0, 1)
         response = (embedded + pos_emb[:, : embedded.shape[1], :]).transpose(0, 1)
         mask = self._generate_square_subsequent_mask(src.shape[1]).to(self.device)
         attn, _ = self.self_attention(response, response, response, attn_mask=mask)
@@ -206,17 +225,23 @@ class DecoderModule(nn.Module):
 
     def forward(self, key, query, value, _train=True):
         if _train:
-            mask = self._generate_square_subsequent_mask(query.shape[0]).to(self.device)
-            output, _ = self.self_attention(query, key, value, attn_mask=mask)
-        else:
-            # query seq > key seq
-            if query.shape[0] > key.shape[0]:
-                raise NotImplementedError
-            batch_size = key.shape[1]
-            seq_len = key.shape[0]
-            mask = self._generate_square_subsequent_mask(seq_len)[: query.shape[0]].to(
+            seq_len = query.shape[0]
+            mask = self._generate_square_subsequent_mask(seq_len)[:, : key.shape[0]].to(
                 self.device
             )
+            output, _ = self.self_attention(query, key, value, attn_mask=mask)
+        else:
+            # query seq >= key seq
+            if query.shape[0] >= key.shape[0]:
+                seq_len = query.shape[0]
+                mask = self._generate_square_subsequent_mask(seq_len)[
+                    :, : key.shape[0]
+                ].to(self.device)
+            else:
+                seq_len = key.shape[0]
+                mask = self._generate_square_subsequent_mask(seq_len)[
+                    : query.shape[0]
+                ].to(self.device)
             output, _ = self.self_attention(query, key, value, attn_mask=mask)
         output = self.layer_norm1(output)
         output = self.linear1(output)
@@ -237,7 +262,8 @@ class ReCoSA(nn.Module):
             hidden_size=config["utter_hidden_size"],
             out_size=config["out_size"],
             n_layers=config["utter_n_layer"],
-            n_positions=config["max_seq"],
+            n_positions=config["max_turns"],
+            padding_idx=self.tokenizer.pad_token_id,
             _device=_device,
         )
 
@@ -245,6 +271,7 @@ class ReCoSA(nn.Module):
             vocab_size=config["vocab_size"],
             hidden_size=config["out_size"],
             n_positions=config["max_seq"],
+            padding_idx=self.tokenizer.pad_token_id,
             _device=_device,
         )
 

@@ -1,5 +1,5 @@
 pl:
-    gpus: [1]
+    gpus: [0]
     num_nodes: 1
     distributed_backend: ddp
     amp_level: O2

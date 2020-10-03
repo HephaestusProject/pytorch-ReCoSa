@@ -73,6 +73,25 @@ class RecoSAPL(pl.LightningModule):
         )
         ppl = torch.exp(loss)
         result = pl.EvalResult(checkpoint_on=loss)
+
+        if batch_idx % 100 == 0:
+            pred_sen = torch.argmax(pred, dim=1)
+            pred_sentence = [
+                self.model.tokenizer.decode(i)
+                .split(self.model.tokenizer.eos_token)[0]
+                .split()
+                for i in pred_sen
+            ]
+            target_sentence = [
+                self.model.tokenizer.decode(i)
+                .split(self.model.tokenizer.eos_token)[0]
+                .split()
+                for i in target
+            ]
+            logger.info("idx: " + str(batch_idx))
+            logger.info("pred: " + " ".join(pred_sentence[0]))
+            logger.info("target: " + " ".join(target_sentence[0]))
+
         result.log_dict(
             {"val_loss": loss, "val_ppl": ppl},
             prog_bar=True,
@@ -89,7 +108,9 @@ class RecoSAPL(pl.LightningModule):
         return [opt], [scheduler]
 
     def test_step(self, batch, batch_idx):
-        bleuS = BLEUScore(n_gram=4, smooth=True)
+        # if True:
+        #     return self.validation_step(batch, batch_idx)
+        bleuS = BLEUScore(n_gram=4, smooth=False)
         ctx, _, target = batch
         pred, pred_sen = self.model.predict(
             ctx, batch_size=ctx.shape[0], max_seq=ctx.shape[2]
@@ -115,14 +136,16 @@ class RecoSAPL(pl.LightningModule):
         self.pred.extend(pred_sentence)
         self.target.extend(target_sentence_list)
         bleu_score = bleuS(pred_sentence, target_sentence_list).to(ppl.device)
-
-        if batch_idx == 0:
+        if batch_idx % 10 == 0:
             logger.info("idx: " + str(batch_idx))
             logger.info("pred: " + " ".join(pred_sentence[0]))
             logger.info("target: " + " ".join(target_sentence[0]))
 
         result.log_dict(
-            {"val_loss_gen": loss, "val_ppl_gen": ppl, "val_bleu_gen": bleu_score},
+            {
+                "val_loss_gen": loss,
+                "val_ppl_gen": ppl,
+            },  # , "val_bleu_gen": bleu_score},
             prog_bar=True,
             logger=True,
             on_step=False,
@@ -151,14 +174,15 @@ def main(
         cfg.dataset.raw.train,
         cfg.model.max_seq,
         cfg.dataset.target,
+        cfg.model.max_turns,
     )
     val_data = UbuntuDataSet(
         cfg.dataset.root + cfg.dataset.target,
         cfg.dataset.raw.val,
         cfg.model.max_seq,
         cfg.dataset.target,
+        cfg.model.max_turns,
     )
-
     train_dataloader = UbuntuDataLoader(
         train_data,
         batch_size=cfg.model.batch_size,

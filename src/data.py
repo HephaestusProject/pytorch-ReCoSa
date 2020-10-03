@@ -118,13 +118,14 @@ class UbuntuDataSet(Dataset):
         filepath: str,
         _max_seq: int = 50,
         _data_name: str = "Ubuntu",
+        _max_turns: int = 5,
     ) -> None:
         """"""
         self._path = folderpath + "/" + filepath
         if _data_name == "Ubuntu":
-            self._corpus = dataload_ubuntu(self._path)
+            self._corpus = dataload_ubuntu(self._path, _max_turns)
         elif _data_name == "DSTC7_AVSD":
-            self._corpus = dataload_DSTC7_AVSD(self._path)
+            self._corpus = dataload_DSTC7_AVSD(self._path, _max_turns)
         else:
             raise NotImplementedError
         self._tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
