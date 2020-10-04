@@ -21,11 +21,13 @@ from src.core.build_data import Config
 
 def make_max_contexts(ctx: list, _max_history: int):
     context = ["" for _ in range(_max_history)]
-    reversed_range = range(_max_history - 1, -1, -1)
-    forward_range = range(len(ctx))
+    # adjust history size
+    if _max_history < len(ctx):
+        ctx = ctx[(len(ctx) - _max_history) :]
 
-    for f_idx, r_idx in zip(forward_range, reversed_range):
-        context[r_idx] = ctx[f_idx].strip()
+    pad_start_idx = _max_history - len(ctx)
+    for f_idx in range(pad_start_idx, _max_history):
+        context[f_idx] = ctx[f_idx - pad_start_idx].strip()
     return context
 
 

@@ -14,6 +14,7 @@ class TestDataSet(unittest.TestCase):
         self.data = UbuntuDataSet(
             folderpath=self.cfg.dataset.root + self.cfg.dataset.target,
             filepath=self.cfg.dataset.raw.train,
+            _max_turns=self.cfg.model.max_turns,
         )
         self.test_batch_size = 2
 

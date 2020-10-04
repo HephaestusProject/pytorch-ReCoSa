@@ -9,26 +9,28 @@ from train import RecoSAPL
 
 class TestReCoSa(unittest.TestCase):
     def setUp(self):
-        self.data = UbuntuDataSet("./" + "tests/resources/Ubuntu/", "sample.csv")
         self.config = Config()
         self.config.add_model("./conf/model/ReCoSa_test.yml")
         self.config.add_trainer("./conf/trainer/ReCoSa_test.yml")
+        self.data = UbuntuDataSet(
+            "./" + "tests/resources/Ubuntu/",
+            "sample.csv",
+            self.config.model.max_seq,
+            "Ubuntu",
+            self.config.model.max_turns,
+        )
         self.trainDataLoader = UbuntuDataLoader(
-            self.data,
-            **self.config.trainer.data,
-            collate_fn=collate,
+            self.data, **self.config.trainer.data, collate_fn=collate,
         )
         self.valDataLoader = UbuntuDataLoader(
-            self.data,
-            **self.config.trainer.data,
-            collate_fn=collate,
+            self.data, **self.config.trainer.data, collate_fn=collate,
         )
         self.model = RecoSAPL(self.config.model)
         self.trainer = pl.Trainer(**self.config.trainer.pl)
 
     def test_trainer(self):
         self.assertFalse(self.config.trainer.data.shuffle)
-        res = self.trainer.fit(self.model, self.trainDataLoader, self.valDataLoader)
+        _ = self.trainer.fit(self.model, self.trainDataLoader, self.valDataLoader)
 
 
 if __name__ == "__main__":
