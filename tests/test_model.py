@@ -17,21 +17,23 @@ class TestDATA:
     ctx = torch.tensor(
         [
             [
-                [50257, 1092, 505, 4206, 1521, 616, 4283, 50258],
-                [50257, 72, 900, 510, 616, 289, 67, 50258],
+                [50257, 1092, 505, 4206, 1521, 616, 4283, 50258, 50259, 50259],
+                [50257, 72, 900, 510, 616, 289, 67, 50258, 50259, 50259],
             ]
         ]
     )
     # batch, seq_len
-    response = torch.tensor([[50257, 3087, 4282, 2339, 2026, 4518, 27, 50258]])
-    dec_input = torch.rand([8, 1, 256])
+    response = torch.tensor(
+        [[50257, 3087, 4282, 2339, 2026, 4518, 27, 50258, 50259, 50259]]
+    )
+    dec_input = torch.rand([10, 1, 256])
 
     # # batch, turn, seq_len
-    assert ctx.shape == torch.Size([1, 2, 8])
+    assert ctx.shape == torch.Size([1, 2, 10])
     # batch, seq_len
-    assert response.shape == torch.Size([1, 8])
+    assert response.shape == torch.Size([1, 10])
     # seq_len, batch, hidden_size
-    assert dec_input.shape == torch.Size([8, 1, 256])
+    assert dec_input.shape == torch.Size([10, 1, 256])
 
 
 class TestCtxEncoder(unittest.TestCase):
@@ -42,7 +44,8 @@ class TestCtxEncoder(unittest.TestCase):
         self.hidden_size = 256
         self.out_size = 128
         self.n_layers = 1
-        self.n_positions = 8
+        self.n_positions = 10
+        self.padding_idx = 50259
         self.enc = EncoderCtxModule(
             vocab_size=self.vocab_size,
             embed_size=self.emb_size,
@@ -50,6 +53,7 @@ class TestCtxEncoder(unittest.TestCase):
             out_size=self.out_size,
             n_layers=self.n_layers,
             n_positions=self.n_positions,
+            padding_idx=self.padding_idx,
             _device=self.device,
         )
         self.data = TestDATA()
@@ -96,15 +100,13 @@ class TestCtxEncoder(unittest.TestCase):
                 pass
 
     def test_input(self):
-        self.assertEqual(self.data.ctx.shape, torch.Size([1, 2, 8]))
+        self.assertEqual(self.data.ctx.shape, torch.Size([1, 2, 10]))
 
     def test_forward_enc(self):
         output = self.enc(self.data.ctx.to(self.device))
         self.assertEqual(
             output.shape,
-            torch.Size(
-                [self.data.ctx.shape[-1], self.data.ctx.shape[0], self.out_size]
-            ),
+            torch.Size([self.data.ctx.shape[1], self.data.ctx.shape[0], self.out_size]),
         )
 
 
@@ -113,19 +115,21 @@ class TestResponseEncoder(unittest.TestCase):
         self.device = torch.device("cpu")
         self.hidden_size = 256
         self.vocab_size = 50260
-        self.n_positions = 8
+        self.n_positions = 10
         self.emb_size = 128
+        self.padding_idx = 50259
         self.enc = EncoderResponseModule(
             vocab_size=self.vocab_size,
             hidden_size=self.hidden_size,
             n_positions=self.n_positions,
+            padding_idx=self.padding_idx,
             _device=self.device,
         )
         self.data = TestDATA()
         pytorch_lightning.seed_everything(SEED_NUM)
 
     def test_input(self):
-        self.assertEqual(self.data.response.shape, torch.Size([1, 8]))
+        self.assertEqual(self.data.response.shape, torch.Size([1, 10]))
 
     @pytest.mark.skip()
     def test_init(self):
@@ -199,12 +203,12 @@ class TestReCoSa(unittest.TestCase):
         # turns, batch, seq_len
         # 1th-turn
         self.assertEqual(
-            "<|start|> anyone knows why my stock <|end|>",
+            "<|start|> anyone knows why my stock <|end|> <|pad|> <|pad|>",
             self.recosa.tokenizer.decode(self.data.ctx[0, 0, :]),
         )
         # 2nd-turn
         self.assertEqual(
-            "<|start|> i set up my hd <|end|>",
+            "<|start|> i set up my hd <|end|> <|pad|> <|pad|>",
             self.recosa.tokenizer.decode(self.data.ctx[0, 1, :]),
         )
 
