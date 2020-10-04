@@ -49,4 +49,10 @@ pip install -r requirements.txt
 
 # ctx padded for lstm
 # python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.2.0.avsd 2>&1 | tee lightning_logs/train_v0.2.0.avsd.log
-python train.py --config_data_file ./conf/dataset/ubuntu.yml --version=v0.2.0 2>&1 | tee lightning_logs/train_v0.2.0.log
+# python train.py --config_data_file ./conf/dataset/ubuntu.yml --version=v0.2.0 2>&1 | tee lightning_logs/train_v0.2.0.log
+
+# LR scheduler (ReduceLROnPlateau)
+# python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.2.1.avsd 2>&1 | tee lightning_logs/train_v0.2.1.avsd.log
+
+# history left padding
+python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.2.2.avsd 2>&1 | tee lightning_logs/train_v0.2.2.avsd.log

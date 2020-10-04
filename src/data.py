@@ -20,12 +20,12 @@ from src.core.build_data import Config
 
 
 def make_max_contexts(ctx: list, _max_history: int):
-    context = []
-    for idx in range(_max_history):
-        try:
-            context.append(ctx[idx])
-        except IndexError:
-            context.append("")
+    context = ["" for _ in range(_max_history)]
+    reversed_range = range(_max_history - 1, -1, -1)
+    forward_range = range(len(ctx))
+
+    for f_idx, r_idx in zip(forward_range, reversed_range):
+        context[r_idx] = ctx[f_idx].strip()
     return context
 
 

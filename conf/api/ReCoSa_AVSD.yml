@@ -5,7 +5,7 @@
 # This your_mode.yml was made by soeque1 at 24/07/20.
 # writing configuration of your dataset.
 
-version: v0.2.0
-model_path: exp/DSTC7_AVSD/v0.2.0.avsd/epoch=02-val_loss=2.1898.ckpt
+version: v0.2.1
+model_path: exp/DSTC7_AVSD/v0.2.1.avsd/epoch=82-val_loss=2.0121.ckpt
 ip: 127.0.0.1
 port: 8000
