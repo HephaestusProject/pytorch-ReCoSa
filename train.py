@@ -4,17 +4,16 @@
 """
 
 import logging
-import torch
 from argparse import ArgumentParser, Namespace
 from logging import getLogger
 
 import pytorch_lightning as pl
+import torch
 import torch.nn.functional as F
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import LearningRateLogger, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.metrics.nlp import BLEUScore
-
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 

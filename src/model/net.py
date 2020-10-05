@@ -6,9 +6,9 @@
 import logging
 from logging import getLogger
 from typing import List
-from numpy.core.multiarray import concatenate
 
 import torch
+from numpy.core.multiarray import concatenate
 from torch import nn, tensor
 from transformers import GPT2Tokenizer
 from transformers.modeling_gpt2 import Block

@@ -20,10 +20,14 @@ class TestReCoSa(unittest.TestCase):
             self.config.model.max_turns,
         )
         self.trainDataLoader = UbuntuDataLoader(
-            self.data, **self.config.trainer.data, collate_fn=collate,
+            self.data,
+            **self.config.trainer.data,
+            collate_fn=collate,
         )
         self.valDataLoader = UbuntuDataLoader(
-            self.data, **self.config.trainer.data, collate_fn=collate,
+            self.data,
+            **self.config.trainer.data,
+            collate_fn=collate,
         )
         self.model = RecoSAPL(self.config.model)
         self.trainer = pl.Trainer(**self.config.trainer.pl)

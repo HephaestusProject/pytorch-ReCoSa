@@ -31,7 +31,11 @@ class TestReCoSaInference(unittest.TestCase):
             _max_turns=self.config.model.max_turns,
         )
         dataloader = UbuntuDataLoader(
-            data, batch_size=1, shuffle=False, num_workers=8, collate_fn=collate,
+            data,
+            batch_size=1,
+            shuffle=False,
+            num_workers=8,
+            collate_fn=collate,
         )
         sample = iter(dataloader)
         sample_data = next(sample)
@@ -47,7 +51,7 @@ class TestReCoSaInference(unittest.TestCase):
             self.recosa.model.tokenizer.decode(self.ctx[batch_idx][-2]),
         )
         self.assertEqual(
-            '<|start|> https://bugs.launchpad.net/lightdm/+bug/864109/comments/3. <|end|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|>',
+            "<|start|> https://bugs.launchpad.net/lightdm/+bug/864109/comments/3. <|end|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|>",
             self.recosa.model.tokenizer.decode(self.ctx[batch_idx][-1]),
         )
         self.assertEqual(

@@ -40,7 +40,7 @@ def main(
         cfg.dataset.raw.val,
         cfg.model.max_seq,
         cfg.dataset.target,
-        cfg.model.max_turns
+        cfg.model.max_turns,
     )
 
     val_dataloader = UbuntuDataLoader(
