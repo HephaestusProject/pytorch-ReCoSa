@@ -43,11 +43,11 @@ class TestReCoSaInference(unittest.TestCase):
     def test_inputs(self):
         batch_idx = 0
         self.assertEqual(
-            "<|start|> anyone knows why my stock oneiric exports env var 'USERNAME'?  I mean what is that used for?  I know of $USER but not $USERNAME.  My precise install doesn't export USERNAME. <|end|>",
+            "<|start|> thanks!  How the heck did you figure that out?. <|end|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|>",
             self.recosa.model.tokenizer.decode(self.ctx[batch_idx][-2]),
         )
         self.assertEqual(
-            '<|start|> looks like it used to be exported by lightdm, but the line had the comment "// FIXME: Is this required?" so I guess it isn\'t surprising it is gone. <|end|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|>',
+            '<|start|> https://bugs.launchpad.net/lightdm/+bug/864109/comments/3. <|end|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|>',
             self.recosa.model.tokenizer.decode(self.ctx[batch_idx][-1]),
         )
         self.assertEqual(
@@ -64,14 +64,13 @@ class TestReCoSaInference(unittest.TestCase):
         dec_res = torch.argmax(dec_res[0], dim=0)
         res_decoded = self.recosa.model.tokenizer.decode(dec_res)
         logger.debug(res_decoded)
-        self.assertEqual(res_decoded.split()[0], "I..")
+        self.assertEqual(res_decoded.split()[0], "thanks,")
 
-    # @pytest.mark.skip(reason="To be trained.")
     def test_predict_recosa(self):
         _, res = self.recosa.predict(self.ctx)
         res_decoded = self.recosa.model.tokenizer.decode(res[0])
         logger.debug(res_decoded)
-        self.assertEqual(res_decoded.split()[0], "I'm")
+        self.assertEqual(res_decoded.split()[0], "thanks.")
 
 
 if __name__ == "__main__":

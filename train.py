@@ -120,8 +120,6 @@ class RecoSAPL(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def test_step(self, batch, batch_idx):
-        # if True:
-        #     return self.validation_step(batch, batch_idx)
         bleuS = BLEUScore(n_gram=4, smooth=False)
         ctx, _, target = batch
         pred, pred_sen = self.model.predict(
