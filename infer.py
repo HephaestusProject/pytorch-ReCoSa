@@ -16,9 +16,9 @@ class ReCoSaAPI:
         self.model.eval()
         self.api_conifg = api_config
 
-    def predict(self, _input: dict) -> dict:
+    def generate(self, _input: dict) -> dict:
         _ctx = _input["text"]
-        response = self.model.predict(_ctx)
+        response = self.model.generate(_ctx)
         out = {"response": response}
         return out
 

@@ -13,12 +13,12 @@ import torch.nn.functional as F
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import LearningRateLogger, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.metrics.nlp import BLEUScore
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
+from src.metric import bleuS
 from src.model.net import ReCoSA
 from src.utils.prepare import build
 
@@ -41,8 +41,8 @@ class RecoSAPL(pl.LightningModule):
     def inference(self, ctx: torch.Tensor, response: torch.Tensor) -> torch.Tensor:
         return self.model.inference(ctx, response)
 
-    def predict(self, ctx: torch.Tensor) -> str:
-        return self.model.predict(ctx)
+    def generate(self, ctx: torch.Tensor) -> str:
+        return self.model.generate(ctx)
 
     def training_step(self, batch, batch_idx):
         ctx, response, target = batch
@@ -119,9 +119,8 @@ class RecoSAPL(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def test_step(self, batch, batch_idx):
-        bleuS = BLEUScore(n_gram=4, smooth=False)
         ctx, _, target = batch
-        pred, pred_sen = self.model.predict(
+        pred, pred_sen = self.model.generate(
             ctx, batch_size=ctx.shape[0], max_seq=ctx.shape[2]
         )
         loss = F.cross_entropy(

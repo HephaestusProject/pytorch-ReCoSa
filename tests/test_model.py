@@ -227,9 +227,9 @@ class TestReCoSa(unittest.TestCase):
             ),
         )
 
-    def test_predict_recosa(self):
+    def test_generate_recosa(self):
         ctxs = self.data.ctx.to(self.device)
-        res, res_max = self.recosa.predict(ctxs, max_seq=ctxs.shape[2])
+        res, res_max = self.recosa.generate(ctxs, max_seq=ctxs.shape[2])
         batch_size = self.data.ctx.shape[0]
         self.assertEqual(
             torch.Size([batch_size, self.config.model.vocab_size, ctxs.shape[2]]),

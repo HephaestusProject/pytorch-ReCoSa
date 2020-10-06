@@ -19,7 +19,7 @@ from transformers import GPT2Tokenizer
 from src.core.build_data import Config
 
 
-def make_max_contexts(ctx: list, _max_history: int):
+def make_max_contexts(ctx: List[str], _max_history: int):
     context = ["" for _ in range(_max_history)]
     # adjust history size
     if _max_history < len(ctx):

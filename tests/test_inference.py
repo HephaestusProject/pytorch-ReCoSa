@@ -68,13 +68,13 @@ class TestReCoSaInference(unittest.TestCase):
         dec_res = torch.argmax(dec_res[0], dim=0)
         res_decoded = self.recosa.model.tokenizer.decode(dec_res)
         logger.debug(res_decoded)
-        self.assertEqual(res_decoded.split()[0], "thanks,")
+        self.assertEqual(res_decoded.split()[0], "Thanks")
 
-    def test_predict_recosa(self):
-        _, res = self.recosa.predict(self.ctx)
+    def test_generate_recosa(self):
+        _, res = self.recosa.generate(self.ctx)
         res_decoded = self.recosa.model.tokenizer.decode(res[0])
         logger.debug(res_decoded)
-        self.assertEqual(res_decoded.split()[0], "thanks.")
+        self.assertEqual(res_decoded.split()[0], "Thanks,")
 
 
 if __name__ == "__main__":
