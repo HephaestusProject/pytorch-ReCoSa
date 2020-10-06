@@ -8,6 +8,7 @@ from argparse import ArgumentParser, Namespace
 from logging import getLogger
 
 import pytorch_lightning as pl
+
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
 from src.metric import bleuS
