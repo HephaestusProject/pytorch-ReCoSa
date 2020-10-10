@@ -122,7 +122,18 @@ class UbuntuDataSet(Dataset):
         _data_name: str = "Ubuntu",
         _max_turns: int = 5,
     ) -> None:
-        """"""
+        """init
+
+        Args:
+            folderpath (str): [description]
+            filepath (str): [description]
+            _max_seq (int, optional): max_sequence. Defaults to 50.
+            _data_name (str, optional): Ubuntu or DSTC7_AVSD. Defaults to "Ubuntu".
+            _max_turns (int, optional): max history turns. Defaults to 5.
+
+        Raises:
+            NotImplementedError: _data_name only supports Ubuntu or DSTC7_AVSD
+        """
         self._path = folderpath + "/" + filepath
         if _data_name == "Ubuntu":
             self._corpus = dataload_ubuntu(self._path, _max_turns)
@@ -151,6 +162,14 @@ class UbuntuDataSet(Dataset):
         return len(self._corpus)
 
     def encode_fn(self, _input: str) -> List[int]:
+        """encode
+
+        Args:
+            _input (str): str
+
+        Returns:
+            List[int]: tokenize.encode({bos} {input} {eos})
+        """
         _input = "{bos} {sentence} {eos}".format(
             bos=self._tokenizer.bos_token,
             sentence=_input,
@@ -164,20 +183,52 @@ class UbuntuDataSet(Dataset):
             truncation=True,
         )
 
-    def get_ctx(self, ctx: list) -> torch.Tensor:
+    def encode_ctx(self, ctx: list) -> torch.Tensor:
+        """encoding contenxts
+
+        Args:
+            ctx (list): [description]
+
+        Returns:
+            torch.Tensor: [description]
+        """
         return [self.encode_fn(i) for i in ctx]
 
-    def get_cands_for_retreival(self, cands: list) -> List[torch.Tensor]:
+    def encode_cands_for_retreival(self, cands: list) -> List[torch.Tensor]:
+        """encoding candidates for retreival
+
+        Args:
+            cands (list): [description]
+
+        Returns:
+            List[torch.Tensor]: [description]
+        """
         return [self.encode_fn(i) for i in cands]
 
-    def get_cands_for_generation(self, response: str) -> torch.Tensor:
+    def encode_cands_for_generation(self, response: str) -> torch.Tensor:
+        """encoding candidates for generation
+
+        Args:
+            response (str): [description]
+
+        Returns:
+            torch.Tensor: [description]
+        """
         return self.encode_fn(response)[1:] + [self._tokenizer.eos_token_id]
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        """get item for Dataset
+
+        Args:
+            idx (int): [description]
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: [description]
+        """
         dataset = self._corpus[idx]
-        ctx = self.get_ctx(dataset["context"])
+        ctx = self.encode_ctx(dataset["context"])
         response = self.encode_fn(dataset["response"])
-        target = self.get_cands_for_generation(dataset["response"])
+        target = self.encode_cands_for_generation(dataset["response"])
         return (ctx, response, target)
 
 
