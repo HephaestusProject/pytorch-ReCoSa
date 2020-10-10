@@ -11,9 +11,11 @@ logger = getLogger(__name__)
 
 
 class TestReCoSaAPI(unittest.TestCase):
+    def setUp(self):
+        self.client = TestClient(app)
+
     def test_health(self):
-        client = TestClient(app)
-        response = client.get("/hello")
+        response = self.client.get("/hello")
         assert response.status_code == 200
         assert response.json() == "hi"
 
@@ -21,8 +23,7 @@ class TestReCoSaAPI(unittest.TestCase):
         body = {
         "input_text": "it's not out . \n they probabaly are waiting for all the mirrors to sync. the release annocement will be after that. ."
         }
-        client = TestClient(app)
-        response = client.post(
+        response = self.client.post(
             "/model",
             json=body
         )

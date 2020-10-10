@@ -26,7 +26,6 @@ class ReCoSaAPI:
         pytorch_lightning.seed_everything(SEED_NUM)
         self._max_history = config.model.max_turns
         self._max_seq = config.model.max_seq
-        self._tokenizer = self.recosa.model.tokenizer
 
     def encode_fn(self, _input: str) -> List[int]:
         """encode
@@ -38,11 +37,11 @@ class ReCoSaAPI:
             List[int]: tokenize.encode({bos} {input} {eos})
         """
         _input = "{bos} {sentence} {eos}".format(
-            bos=self._tokenizer.bos_token,
+            bos=self.recosa.model.tokenizer.bos_token,
             sentence=_input,
-            eos=self._tokenizer.eos_token,
+            eos=self.recosa.model.tokenizer.eos_token,
         )
-        return self._tokenizer.encode(
+        return self.recosa.model.tokenizer.encode(
             _input,
             add_special_tokens=False,
             max_length=self._max_seq,
