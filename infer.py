@@ -3,16 +3,16 @@
     To implement code for inference with your model.
 """
 
-import pytorch_lightning
-import torch
+from logging import getLogger
 from typing import List
 
-from logging import getLogger
-from src.data import make_max_contexts
+import pytorch_lightning
+import torch
 
+from src.data import make_max_contexts
 from src.model.net import ReCoSA
-from train import RecoSAPL
 from tests.test_model import SEED_NUM
+from train import RecoSAPL
 
 logger = getLogger(__name__)
 
@@ -62,7 +62,9 @@ class ReCoSaAPI:
 
     def generate(self, _input: str) -> str:
         # seq_len, turns
-        _ctx = torch.tensor(self.encode_ctx(make_max_contexts(_input.split("\n"), self._max_history)))
+        _ctx = torch.tensor(
+            self.encode_ctx(make_max_contexts(_input.split("\n"), self._max_history))
+        )
         # seq_len, batch, turns
         _ctx = torch.unsqueeze(_ctx, 0)
         _, res = self.recosa.model.generate(_ctx)

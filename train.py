@@ -120,9 +120,7 @@ class RecoSAPL(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         ctx, _, target = batch
-        pred, pred_sen = self.model.generate(
-            ctx, max_seq=ctx.shape[2]
-        )
+        pred, pred_sen = self.model.generate(ctx, max_seq=ctx.shape[2])
         loss = F.cross_entropy(
             pred, target, ignore_index=self.model.tokenizer.pad_token_id
         )
