@@ -2,15 +2,16 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from infer import ReCoSaAPI
 from serving.app_factory import create_app
 from src.core.build_data import Config
+from infer import Predictor
+from train import RecoSAPL
 
 config = Config()
 config.add_model("./conf/model/ReCoSa.yml")
 config.add_api("./conf/api/ReCoSa.yml")
 
-predictor = ReCoSaAPI(config)
+predictor = Predictor.from_checkpoint(RecoSAPL, config)
 
 
 class Request(BaseModel):

@@ -10,22 +10,29 @@ import pytorch_lightning
 import torch
 
 from src.data import make_max_contexts
-from src.model.net import ReCoSA
 from tests.test_model import SEED_NUM
-from train import RecoSAPL
+
 
 logger = getLogger(__name__)
 
 
-class ReCoSaAPI:
-    def __init__(self, config: dict) -> None:
-        self.recosa = RecoSAPL.load_from_checkpoint(
-            config.api.model_path, **config.model
-        )
-        self.recosa.model.eval()
+class Predictor:
+    def __init__(self, model, tokenizer, _max_history: int, _max_seq: int) -> None:
         pytorch_lightning.seed_everything(SEED_NUM)
-        self._max_history = config.model.max_turns
-        self._max_seq = config.model.max_seq
+        self.model = model.eval()
+        self.tokenizer = tokenizer
+        self._max_history = _max_history
+        self._max_seq = _max_seq
+
+    @classmethod
+    def from_checkpoint(cls, PLModel, config: dict):
+        recosa = PLModel.load_from_checkpoint(config.api.model_path, **config.model)
+        return cls(
+            model=recosa.model,
+            tokenizer=recosa.model.tokenizer,
+            _max_history=config.model.max_turns,
+            _max_seq=config.model._max_seq,
+        )
 
     def encode_fn(self, _input: str) -> List[int]:
         """encode
@@ -37,11 +44,11 @@ class ReCoSaAPI:
             List[int]: tokenize.encode({bos} {input} {eos})
         """
         _input = "{bos} {sentence} {eos}".format(
-            bos=self.recosa.model.tokenizer.bos_token,
+            bos=self.tokenizer.bos_token,
             sentence=_input,
-            eos=self.recosa.model.tokenizer.eos_token,
+            eos=self.tokenizer.eos_token,
         )
-        return self.recosa.model.tokenizer.encode(
+        return self.tokenizer.encode(
             _input,
             add_special_tokens=False,
             max_length=self._max_seq,
@@ -67,9 +74,9 @@ class ReCoSaAPI:
         )
         # seq_len, batch, turns
         _ctx = torch.unsqueeze(_ctx, 0)
-        _, res = self.recosa.model.generate(_ctx)
-        res_decoded = self.recosa.model.tokenizer.decode(res[0])
-        return res_decoded.split(self.recosa.model.tokenizer.eos_token)[0]
+        _, res = self.model.generate(_ctx)
+        res_decoded = self.tokenizer.decode(res[0])
+        return res_decoded.split(self.tokenizer.eos_token)[0]
 
 
 if __name__ == "__main__":
