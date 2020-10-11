@@ -22,7 +22,7 @@ class TestReCoSaInference(unittest.TestCase):
         self.config.add_model("./conf/model/ReCoSa_test.yml")
         self.config.add_api("./conf/api/ReCoSa.yml")
         self.recosa = RecoSAPL.load_from_checkpoint(
-            self.config.api.model_path, **self.config.model
+            checkpoint_path=self.config.api.model_path, config=self.config.model
         )
         data = UbuntuDataSet(
             self.config.dataset.root + self.config.dataset.target,

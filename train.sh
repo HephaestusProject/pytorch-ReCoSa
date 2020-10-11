@@ -56,4 +56,8 @@ pip install -r requirements.txt
 
 # history left padding
 # python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.2.2.avsd 2>&1 | tee lightning_logs/train_v0.2.2.avsd.log
-python train.py --config_data_file ./conf/dataset/ubuntu.yml --version=v0.2.2 2>&1 | tee lightning_logs/train_v0.2.2.log
+# python train.py --config_data_file ./conf/dataset/ubuntu.yml --version=v0.2.2 2>&1 | tee lightning_logs/train_v0.2.2.log
+
+# LR scheduler + Warmup + AdamW
+# python train.py --config_data_file ./conf/dataset/DSTC7_AVSD.yml --version=v0.2.3.avsd 2>&1 | tee lightning_logs/train_v0.2.3.avsd.log
+python train.py --config_data_file ./conf/dataset/ubuntu.yml --version=v0.2.3 2>&1 | tee lightning_logs/train_v0.2.3.log

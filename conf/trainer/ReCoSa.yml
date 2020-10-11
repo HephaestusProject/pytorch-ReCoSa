@@ -10,4 +10,7 @@ data:
     num_workers: 4
     shuffle: False
     fast_dev_run: False
-lr: 1e-4
+lr: 6.25e-5
+gradient_accumulation_steps: 1
+warmup_steps: 500
+weight_decay: 0.01

@@ -51,7 +51,9 @@ def main(
         collate_fn=collate,
     )
 
-    model = RecoSAPL.load_from_checkpoint(cfg.api.model_path, **cfg.model)
+    model = RecoSAPL.load_from_checkpoint(
+        checkpoint_path=cfg.api.model_path, config=cfg.model
+    )
     cfg.trainer.pl.max_epochs = 1
 
     trainer = pl.Trainer(**cfg.trainer.pl, logger=False, checkpoint_callback=False)
