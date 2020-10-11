@@ -12,7 +12,6 @@ import torch
 from src.data import make_max_contexts
 from tests.test_model import SEED_NUM
 
-
 logger = getLogger(__name__)
 
 

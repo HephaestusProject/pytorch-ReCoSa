@@ -2,9 +2,9 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from infer import Predictor
 from serving.app_factory import create_app
 from src.core.build_data import Config
-from infer import Predictor
 from train import RecoSAPL
 
 config = Config()
