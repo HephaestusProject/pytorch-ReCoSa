@@ -28,6 +28,7 @@ class TestReCoSaInference(unittest.TestCase):
             self.config.dataset.root + self.config.dataset.target,
             self.config.dataset.raw.train,
             self.config.model.max_seq,
+            _max_turns=self.config.model.max_turns,
         )
         dataloader = UbuntuDataLoader(
             data,
@@ -46,19 +47,19 @@ class TestReCoSaInference(unittest.TestCase):
     def test_inputs(self):
         batch_idx = 0
         self.assertEqual(
-            "[CLS] anyone knows why my stock oneiric exports env var'username '? i mean what is that used for? i know of $ user but not $ username. my precise install doesn't export username. [SEP] [PAD] [PAD]",
-            self.recosa.model.tokenizer.decode(self.ctx[batch_idx][0]),
+            "<|start|> thanks!  How the heck did you figure that out?. <|end|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|>",
+            self.recosa.model.tokenizer.decode(self.ctx[batch_idx][-2]),
         )
         self.assertEqual(
-            '[CLS] looks like it used to be exported by lightdm, but the line had the comment " / / fixme : is this required? " so i guess it isn\'t surprising it is gone. [SEP] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD]',
-            self.recosa.model.tokenizer.decode(self.ctx[batch_idx][1]),
+            "<|start|> https://bugs.launchpad.net/lightdm/+bug/864109/comments/3. <|end|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|>",
+            self.recosa.model.tokenizer.decode(self.ctx[batch_idx][-1]),
         )
         self.assertEqual(
-            "[CLS] nice thanks!. [SEP] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD]",
+            "<|start|> nice thanks!. <|end|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|>",
             self.recosa.model.tokenizer.decode(self.response[batch_idx]),
         )
         self.assertEqual(
-            "nice thanks!. [SEP] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD] [PAD]",
+            "nice thanks!. <|end|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|pad|> <|end|>",
             self.recosa.model.tokenizer.decode(self.target[batch_idx]),
         )
 
@@ -67,11 +68,10 @@ class TestReCoSaInference(unittest.TestCase):
         dec_res = torch.argmax(dec_res[0], dim=0)
         res_decoded = self.recosa.model.tokenizer.decode(dec_res)
         logger.debug(res_decoded)
-        self.assertEqual(res_decoded.split()[0], "thanks..")
+        self.assertEqual(res_decoded.split()[0], "thanks.")
 
-    # @pytest.mark.skip(reason="To be trained.")
-    def test_predict_recosa(self):
-        _, res = self.recosa.predict(self.ctx)
+    def test_generate_recosa(self):
+        _, res = self.recosa.generate(self.ctx)
         res_decoded = self.recosa.model.tokenizer.decode(res[0])
         logger.debug(res_decoded)
         self.assertEqual(res_decoded.split()[0], "thanks.")

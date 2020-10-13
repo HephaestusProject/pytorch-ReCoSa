@@ -1,5 +1,4 @@
 pl:
-    gpus: 0
     num_nodes: 1
     distributed_backend: ddp_cpu
     precision: 32

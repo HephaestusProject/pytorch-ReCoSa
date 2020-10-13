@@ -9,11 +9,11 @@
 
 ## Table
 
-* Ubuntu Dataset2.0
+* DSTC7_AVSD
 
-| PPL   |      BLEU      |
-|----------|:-------------:|
-| 96.057 |  1.6485 |
+| PPL   |      BLEU(4-grams)    | BLEU(2-grams)      |
+|----------|:-------------:|:-------------:|
+| 137.06 |  0.073 | 0.223
 
 ## Training history
 

@@ -4,21 +4,21 @@
 """
 
 import logging
-import torch
 from argparse import ArgumentParser, Namespace
 from logging import getLogger
 
 import pytorch_lightning as pl
+import torch
 import torch.nn.functional as F
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import Callback, ModelCheckpoint
+from pytorch_lightning.callbacks import LearningRateLogger, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.metrics.nlp import BLEUScore
 from torch.optim import Adam
-from torch.optim.lr_scheduler import ExponentialLR
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
+from src.metric import bleuS
 from src.model.net import ReCoSA
 from src.utils.prepare import build
 
@@ -41,8 +41,8 @@ class RecoSAPL(pl.LightningModule):
     def inference(self, ctx: torch.Tensor, response: torch.Tensor) -> torch.Tensor:
         return self.model.inference(ctx, response)
 
-    def predict(self, ctx: torch.Tensor) -> str:
-        return self.model.predict(ctx)
+    def generate(self, ctx: torch.Tensor) -> str:
+        return self.model.generate(ctx)
 
     def training_step(self, batch, batch_idx):
         ctx, response, target = batch
@@ -73,6 +73,27 @@ class RecoSAPL(pl.LightningModule):
         )
         ppl = torch.exp(loss)
         result = pl.EvalResult(checkpoint_on=loss)
+
+        if batch_idx % 100 == 0:
+            pred_sen = torch.argmax(pred, dim=1)
+            pred_sentence = [
+                self.model.tokenizer.decode(i)
+                .split(self.model.tokenizer.eos_token)[0]
+                .split()
+                + [self.model.tokenizer.eos_token]
+                for i in pred_sen
+            ]
+            target_sentence = [
+                self.model.tokenizer.decode(i)
+                .split(self.model.tokenizer.eos_token)[0]
+                .split()
+                + [self.model.tokenizer.eos_token]
+                for i in target
+            ]
+            logger.info("idx: " + str(batch_idx))
+            logger.info("pred: " + " ".join(pred_sentence[0]))
+            logger.info("target: " + " ".join(target_sentence[0]))
+
         result.log_dict(
             {"val_loss": loss, "val_ppl": ppl},
             prog_bar=True,
@@ -84,14 +105,22 @@ class RecoSAPL(pl.LightningModule):
         return result
 
     def configure_optimizers(self):
-        opt = Adam(params=self.model.parameters(), lr=1e-4)
-        scheduler = ExponentialLR(opt, gamma=0.95)
-        return [opt], [scheduler]
+        optimizer = Adam(params=self.model.parameters(), lr=1e-5)
+        lr_scheduler = ReduceLROnPlateau(
+            optimizer, patience=10, factor=0.9, verbose=True
+        )
+        # reduce every epoch (default)
+        scheduler = {
+            "scheduler": lr_scheduler,
+            "reduce_on_plateau": True,
+            # val_checkpoint_on is val_loss passed in as checkpoint_on
+            "monitor": "val_checkpoint_on",
+        }
+        return [optimizer], [scheduler]
 
     def test_step(self, batch, batch_idx):
-        bleuS = BLEUScore(n_gram=4, smooth=True)
         ctx, _, target = batch
-        pred, pred_sen = self.model.predict(
+        pred, pred_sen = self.model.generate(
             ctx, batch_size=ctx.shape[0], max_seq=ctx.shape[2]
         )
         loss = F.cross_entropy(
@@ -103,12 +132,14 @@ class RecoSAPL(pl.LightningModule):
             self.model.tokenizer.decode(i)
             .split(self.model.tokenizer.eos_token)[0]
             .split()
+            + [self.model.tokenizer.eos_token]
             for i in pred_sen
         ]
         target_sentence = [
             self.model.tokenizer.decode(i)
             .split(self.model.tokenizer.eos_token)[0]
             .split()
+            + [self.model.tokenizer.eos_token]
             for i in target
         ]
         target_sentence_list = [[i] for i in target_sentence]
@@ -116,8 +147,14 @@ class RecoSAPL(pl.LightningModule):
         self.target.extend(target_sentence_list)
         bleu_score = bleuS(pred_sentence, target_sentence_list).to(ppl.device)
 
-        if batch_idx == 0:
+        if batch_idx % 10 == 0:
             logger.info("idx: " + str(batch_idx))
+            ctx_decoded = [
+                self.model.tokenizer.decode(i).split(self.model.tokenizer.eos_token)[0]
+                + self.model.tokenizer.eos_token
+                for i in ctx[0]
+            ]
+            logger.info("idx: " + " ".join(ctx_decoded))
             logger.info("pred: " + " ".join(pred_sentence[0]))
             logger.info("target: " + " ".join(target_sentence[0]))
 
@@ -151,14 +188,15 @@ def main(
         cfg.dataset.raw.train,
         cfg.model.max_seq,
         cfg.dataset.target,
+        cfg.model.max_turns,
     )
     val_data = UbuntuDataSet(
         cfg.dataset.root + cfg.dataset.target,
         cfg.dataset.raw.val,
         cfg.model.max_seq,
         cfg.dataset.target,
+        cfg.model.max_turns,
     )
-
     train_dataloader = UbuntuDataLoader(
         train_data,
         batch_size=cfg.model.batch_size,
@@ -187,8 +225,12 @@ def main(
     )
 
     model = RecoSAPL(cfg.model)
+    lr_logger = LearningRateLogger(logging_interval="step")
     trainer = pl.Trainer(
-        **cfg.trainer.pl, logger=logger, checkpoint_callback=checkpoint_callback,
+        **cfg.trainer.pl,
+        logger=logger,
+        checkpoint_callback=checkpoint_callback,
+        callbacks=[lr_logger],
     )
     trainer.fit(model, train_dataloader, val_dataloader)
 

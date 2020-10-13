@@ -8,10 +8,10 @@ from argparse import ArgumentParser, Namespace
 from logging import getLogger
 
 import pytorch_lightning as pl
-from pytorch_lightning.metrics.nlp import BLEUScore
 
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
+from src.metric import bleuS
 from src.utils.prepare import build
 from train import RecoSAPL
 
@@ -40,6 +40,7 @@ def main(
         cfg.dataset.raw.val,
         cfg.model.max_seq,
         cfg.dataset.target,
+        cfg.model.max_turns,
     )
 
     val_dataloader = UbuntuDataLoader(
@@ -56,7 +57,6 @@ def main(
     trainer = pl.Trainer(**cfg.trainer.pl, logger=False, checkpoint_callback=False)
     test_result = trainer.test(model, test_dataloaders=val_dataloader)
     logger.info(test_result)
-    bleuS = BLEUScore(n_gram=2, smooth=True)
     bleu_score = bleuS(model.pred, model.target)
     logger.info(bleu_score)
 

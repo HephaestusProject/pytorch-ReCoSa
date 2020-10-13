@@ -21,9 +21,7 @@ logger = getLogger(__name__)
 
 
 class Config:
-    """
-    yaml parser using OmegaConf
-    """
+    """Config: yaml parser using OmegaConf"""
 
     def __init__(self) -> None:
         logger.info("set dataset, model, api")
