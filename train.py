@@ -59,22 +59,12 @@ class RecoSAPL(pl.LightningModule):
             "lr",
             self.lr_scale * self.config.trainer.lr,
             on_step=True,
-            on_epoch=True,
-            prog_bar=True,
+            on_epoch=False,
+            prog_bar=False,
             logger=True,
         )
-        self.log(
-            "tr_loss",
-            loss,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-            sync_dist=True,
-            logger=True,
-        )
-        self.log(
-            "tr_ppl",
-            ppl,
+        self.log_dict(
+            {"tr_loss", loss, "tr_ppl", ppl},
             on_step=False,
             on_epoch=True,
             prog_bar=True,
@@ -110,18 +100,8 @@ class RecoSAPL(pl.LightningModule):
             logger.info("pred: " + " ".join(pred_sentence[0]))
             logger.info("target: " + " ".join(target_sentence[0]))
 
-        self.log(
-            "val_loss",
-            loss,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-            sync_dist=True,
-            logger=True,
-        )
-        self.log(
-            "val_ppl",
-            ppl,
+        self.log_dict(
+            {"val_loss", loss, "val_ppl", ppl},
             on_step=False,
             on_epoch=True,
             prog_bar=True,
@@ -214,27 +194,8 @@ class RecoSAPL(pl.LightningModule):
             logger.info("pred: " + " ".join(pred_sentence[0]))
             logger.info("target: " + " ".join(target_sentence[0]))
 
-        self.log(
-            "val_loss_gen",
-            loss,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-            sync_dist=True,
-            logger=True,
-        )
-        self.log(
-            "val_ppl_gen",
-            ppl,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-            sync_dist=True,
-            logger=True,
-        )
-        self.log(
-            "val_bleu_gen",
-            bleu_score,
+        self.log_dict(
+            {"val_loss_gen", loss, "val_ppl_gen", ppl, "val_bleu_gen", bleu_score},
             on_step=False,
             on_epoch=True,
             prog_bar=True,
