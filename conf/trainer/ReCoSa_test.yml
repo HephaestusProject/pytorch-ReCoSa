@@ -2,7 +2,7 @@ pl:
     num_nodes: 1
     distributed_backend: ddp_cpu
     precision: 32
-    max_epochs: 1
+    max_epochs: 2
 data:
     batch_size: 2
     num_workers: 1
