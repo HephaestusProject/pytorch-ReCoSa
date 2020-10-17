@@ -126,12 +126,26 @@ class RecoSAPL(pl.LightningModule):
         return AdamW(optimizer_grouped_parameters, lr=self.config.trainer.lr, eps=1e-8)
 
     # learning rate warm-up
-    def optimizer_step(self, current_epoch, batch_nb, optimizer, optimizer_idx, second_order_closure=None, on_tpu=False, using_native_amp=False, using_lbfgs=False):
+    def optimizer_step(
+        self,
+        current_epoch,
+        batch_nb,
+        optimizer,
+        optimizer_idx,
+        second_order_closure=None,
+        on_tpu=False,
+        using_native_amp=False,
+        using_lbfgs=False,
+    ):
         # warm up lr
         if self.trainer.global_step < float(self.config.trainer.warmup_steps):
-            lr_scale = min(1., float(self.trainer.global_step + 1) / float(self.config.trainer.warmup_steps))
+            lr_scale = min(
+                1.0,
+                float(self.trainer.global_step + 1)
+                / float(self.config.trainer.warmup_steps),
+            )
             for pg in optimizer.param_groups:
-                pg['lr'] = lr_scale * self.config.trainer.lr
+                pg["lr"] = lr_scale * self.config.trainer.lr
 
         # update params
         optimizer.step()
