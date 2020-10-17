@@ -55,7 +55,6 @@ def dataload_ubuntu(_path: str, _max_history: int = 5) -> List[str]:
                 cands.append(response)
                 random.shuffle(cands)
             data.append({"context": context, "response": response, "cands": cands})
-
     return data
 
 

@@ -3,24 +3,79 @@
     To implement code for inference with your model.
 """
 
+from logging import getLogger
+from typing import List
+
+import pytorch_lightning
 import torch
 
-from src.model.net import ReCoSa
+from src.data import make_max_contexts
+from tests.test_model import SEED_NUM
+
+logger = getLogger(__name__)
 
 
-class ReCoSaAPI:
-    def __init__(
-        self, model_config: dict, _device: torch.device, api_conifg: dict
-    ) -> None:
-        self.model = ReCoSa(model_config, _device)
-        self.model.eval()
-        self.api_conifg = api_config
+class Predictor:
+    def __init__(self, model, tokenizer, _max_history: int, _max_seq: int) -> None:
+        pytorch_lightning.seed_everything(SEED_NUM)
+        self.model = model.eval()
+        self.tokenizer = tokenizer
+        self._max_history = _max_history
+        self._max_seq = _max_seq
 
-    def generate(self, _input: dict) -> dict:
-        _ctx = _input["text"]
-        response = self.model.generate(_ctx)
-        out = {"response": response}
-        return out
+    @classmethod
+    def from_checkpoint(cls, PLModel, config: dict):
+        recosa = PLModel.load_from_checkpoint(config.api.model_path, **config.model)
+        return cls(
+            model=recosa.model,
+            tokenizer=recosa.model.tokenizer,
+            _max_history=config.model.max_turns,
+            _max_seq=config.model._max_seq,
+        )
+
+    def encode_fn(self, _input: str) -> List[int]:
+        """encode
+
+        Args:
+            _input (str): str
+
+        Returns:
+            List[int]: tokenize.encode({bos} {input} {eos})
+        """
+        _input = "{bos} {sentence} {eos}".format(
+            bos=self.tokenizer.bos_token,
+            sentence=_input,
+            eos=self.tokenizer.eos_token,
+        )
+        return self.tokenizer.encode(
+            _input,
+            add_special_tokens=False,
+            max_length=self._max_seq,
+            padding="max_length",
+            truncation=True,
+        )
+
+    def encode_ctx(self, ctx: list) -> torch.Tensor:
+        """encoding contenxts
+
+        Args:
+            ctx (list): [description]
+
+        Returns:
+            torch.Tensor: [description]
+        """
+        return [self.encode_fn(i) for i in ctx]
+
+    def generate(self, _input: str) -> str:
+        # seq_len, turns
+        _ctx = torch.tensor(
+            self.encode_ctx(make_max_contexts(_input.split("\n"), self._max_history))
+        )
+        # seq_len, batch, turns
+        _ctx = torch.unsqueeze(_ctx, 0)
+        _, res = self.model.generate(_ctx)
+        res_decoded = self.tokenizer.decode(res[0])
+        return res_decoded.split(self.tokenizer.eos_token)[0]
 
 
 if __name__ == "__main__":

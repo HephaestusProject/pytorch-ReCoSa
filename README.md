@@ -13,7 +13,7 @@
 
 | PPL   |      BLEU(4-grams)    | BLEU(2-grams)      |
 |----------|:-------------:|:-------------:|
-| 137.06 |  0.073 | 0.223
+| 124.72 |  0.106 | 0.223
 
 ## Training history
 
@@ -21,7 +21,10 @@
 
 ## OpenAPI로 Inference 하는 방법
 
-* curl ~~~
+```sh
+  curl -s "http://127.0.0.1:8000/hello"
+  curl -X POST "http://127.0.0.1:8000/model" -H "Content-Type: application/json" -d "{\"input_text\":\"thanks! \"}"
+```
 
 ## Usage
 
@@ -40,6 +43,12 @@
 
 * interface
   + ArgumentParser의 command가 code block 형태로 들어가야함.
+
+### Evaluate
+
+```sh
+./evaluate.sh
+```
 
 ### Project structure
 
