@@ -64,7 +64,7 @@ class RecoSAPL(pl.LightningModule):
             logger=True,
         )
         self.log_dict(
-            {"tr_loss", loss, "tr_ppl", ppl},
+            {"tr_loss": loss, "tr_ppl": ppl},
             on_step=False,
             on_epoch=True,
             prog_bar=True,
@@ -101,7 +101,7 @@ class RecoSAPL(pl.LightningModule):
             logger.info("target: " + " ".join(target_sentence[0]))
 
         self.log_dict(
-            {"val_loss", loss, "val_ppl", ppl},
+            {"val_loss": loss, "val_ppl": ppl},
             on_step=False,
             on_epoch=True,
             prog_bar=True,
@@ -194,8 +194,7 @@ class RecoSAPL(pl.LightningModule):
             logger.info("pred: " + " ".join(pred_sentence[0]))
             logger.info("target: " + " ".join(target_sentence[0]))
 
-        self.log_dict(
-            {"val_loss_gen", loss, "val_ppl_gen", ppl, "val_bleu_gen", bleu_score},
+        self.log_dict({"val_loss_gen": loss, "val_ppl_gen": ppl, "val_bleu_gen": bleu_score}),
             on_step=False,
             on_epoch=True,
             prog_bar=True,

@@ -7,7 +7,7 @@
 
 * ReCoSA is able to detect relevant contexts and produce a suitable response accordingly. Firstly, a word level LSTM encoder is conducted to obtain the initial representation of each context. Then, the self-attention mechanism is utilized to update both the context and masked response representation. Finally, the attention weights between each context and response representations are computed and used in the further decoding process.
 
-## Table (v0.2.3)
+## Table (v0.2.4)
 
 * DSTC7_AVSD
 

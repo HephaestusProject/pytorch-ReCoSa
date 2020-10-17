@@ -5,7 +5,7 @@
 # This your_mode.yml was made by soeque1 at 24/07/20.
 # writing configuration of your dataset.
 
-version: v0.2.3
-model_path: exp/Ubuntu/v0.2.3/epoch=99-val_loss=4.0380.ckpt
+version: v0.2.4
+model_path: exp/Ubuntu/v0.2.4/epoch=99-val_loss=4.0380.ckpt
 ip: 127.0.0.1
 port: 8000

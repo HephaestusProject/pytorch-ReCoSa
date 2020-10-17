@@ -1,7 +1,7 @@
 pl:
     gpus: [0]
     num_nodes: 1
-    distributed_backend: ddp
+    accelerator: ddp
     amp_level: O2
     amp_backend: native
     max_epochs: 300

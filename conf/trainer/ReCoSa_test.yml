@@ -1,6 +1,6 @@
 pl:
     num_nodes: 1
-    distributed_backend: ddp_cpu
+    accelerator: ddp_cpu
     precision: 32
     max_epochs: 2
 data:
