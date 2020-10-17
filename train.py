@@ -242,7 +242,7 @@ def main(
     )
 
     model = RecoSAPL(cfg, len(train_data))
-    lr_monitor = LearningRateMonitor(logging_interval="epoch")
+    lr_monitor = LearningRateMonitor(logging_interval="step")
     trainer = pl.Trainer(
         **cfg.trainer.pl,
         logger=logger,
