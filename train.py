@@ -55,9 +55,32 @@ class RecoSAPL(pl.LightningModule):
             pred, target, ignore_index=self.model.tokenizer.pad_token_id
         )
         ppl = torch.exp(loss)
-        self.log('lr', self.lr_scale * self.config.trainer.lr, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        self.log('tr_loss', loss, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True, logger=True)
-        self.log('tr_ppl', ppl, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True, logger=True)
+        self.log(
+            "lr",
+            self.lr_scale * self.config.trainer.lr,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True,
+        )
+        self.log(
+            "tr_loss",
+            loss,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+            logger=True,
+        )
+        self.log(
+            "tr_ppl",
+            ppl,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+            logger=True,
+        )
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -87,8 +110,24 @@ class RecoSAPL(pl.LightningModule):
             logger.info("pred: " + " ".join(pred_sentence[0]))
             logger.info("target: " + " ".join(target_sentence[0]))
 
-        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True, logger=True)
-        self.log('val_ppl', ppl, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True, logger=True)
+        self.log(
+            "val_loss",
+            loss,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+            logger=True,
+        )
+        self.log(
+            "val_ppl",
+            ppl,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+            logger=True,
+        )
         return loss
 
     def configure_optimizers(self):
@@ -111,7 +150,17 @@ class RecoSAPL(pl.LightningModule):
         ]
         return AdamW(optimizer_grouped_parameters, lr=self.config.trainer.lr, eps=1e-8)
 
-    def optimizer_step(self, current_epoch, batch_nb, optimizer, optimizer_idx, second_order_closure=None, on_tpu=False, using_native_amp=False, using_lbfgs=False):
+    def optimizer_step(
+        self,
+        current_epoch,
+        batch_nb,
+        optimizer,
+        optimizer_idx,
+        second_order_closure=None,
+        on_tpu=False,
+        using_native_amp=False,
+        using_lbfgs=False,
+    ):
         # warm up lr
         if self.trainer.global_step < float(self.config.trainer.warmup_steps):
             self.lr_scale = min(
@@ -165,9 +214,33 @@ class RecoSAPL(pl.LightningModule):
             logger.info("pred: " + " ".join(pred_sentence[0]))
             logger.info("target: " + " ".join(target_sentence[0]))
 
-        self.log('val_loss_gen', loss, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True, logger=True)
-        self.log('val_ppl_gen', ppl, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True, logger=True)
-        self.log('val_bleu_gen', bleu_score, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True, logger=True)
+        self.log(
+            "val_loss_gen",
+            loss,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+            logger=True,
+        )
+        self.log(
+            "val_ppl_gen",
+            ppl,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+            logger=True,
+        )
+        self.log(
+            "val_bleu_gen",
+            bleu_score,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+            logger=True,
+        )
         return loss
 
 
