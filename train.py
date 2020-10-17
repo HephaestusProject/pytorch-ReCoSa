@@ -18,7 +18,7 @@ from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
-from src.metric import bleuS
+from src.metric import bleuS_4
 from src.model.net import ReCoSA
 from src.utils.prepare import build
 
@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 class RecoSAPL(pl.LightningModule):
-    def __init__(self, config: dict, len_train_dataloader: int) -> None:
+    def __init__(self, config: dict, len_train_dataloader: int = None) -> None:
         super().__init__()
         self.config = config
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -148,7 +148,7 @@ class RecoSAPL(pl.LightningModule):
         target_sentence_list = [[i] for i in target_sentence]
         self.pred.extend(pred_sentence)
         self.target.extend(target_sentence_list)
-        bleu_score = bleuS(pred_sentence, target_sentence_list).to(ppl.device)
+        bleu_score = bleuS_4(pred_sentence, target_sentence_list).to(ppl.device)
 
         if batch_idx % 10 == 0:
             logger.info("idx: " + str(batch_idx))

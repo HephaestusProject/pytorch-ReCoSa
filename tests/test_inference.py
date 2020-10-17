@@ -22,7 +22,7 @@ class TestReCoSaInference(unittest.TestCase):
         self.config.add_model("./conf/model/ReCoSa_test.yml")
         self.config.add_api("./conf/api/ReCoSa.yml")
         self.recosa = RecoSAPL.load_from_checkpoint(
-            checkpoint_path=self.config.api.model_path, config=self.config.model
+            checkpoint_path=self.config.api.model_path, config=self.config
         )
         data = UbuntuDataSet(
             self.config.dataset.root + self.config.dataset.target,
@@ -68,7 +68,7 @@ class TestReCoSaInference(unittest.TestCase):
         dec_res = torch.argmax(dec_res[0], dim=0)
         res_decoded = self.recosa.model.tokenizer.decode(dec_res)
         logger.debug(res_decoded)
-        self.assertEqual(res_decoded.split()[0], "thanks.")
+        self.assertEqual(res_decoded.split()[0], "thanks!.")
 
     def test_generate_recosa(self):
         _, res = self.recosa.generate(self.ctx)

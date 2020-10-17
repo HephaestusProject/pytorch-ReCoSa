@@ -27,7 +27,7 @@ class Predictor:
     @classmethod
     def from_checkpoint(cls, PLModel, config: dict):
         recosa = PLModel.load_from_checkpoint(
-            checkpoint_path=config.api.model_path, config=config.model
+            checkpoint_path=config.api.model_path, config=config
         )
         return cls(
             model=recosa.model,

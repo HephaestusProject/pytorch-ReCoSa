@@ -29,7 +29,7 @@ class BLEUScore:
         self.n_gram = n_gram
         self.smooth = smooth
 
-    def forward(self, translate_corpus: list, reference_corpus: list) -> torch.Tensor:
+    def __call__(self, translate_corpus: list, reference_corpus: list) -> torch.Tensor:
         """
         Actual metric computation
 
@@ -45,7 +45,8 @@ class BLEUScore:
             reference_corpus=reference_corpus,
             n_gram=self.n_gram,
             smooth=self.smooth,
-        ).to(self.device, self.dtype)
+        )
 
 
-bleuS = BLEUScore(n_gram=4, smooth=True)
+bleuS_4 = BLEUScore(n_gram=4, smooth=True)
+bleuS_2 = BLEUScore(n_gram=2, smooth=True)
