@@ -4,17 +4,17 @@
 """
 
 import logging
-import torch
-import torch.nn.functional as F
-import pytorch_lightning as pl
 from argparse import ArgumentParser, Namespace
 from logging import getLogger
 
+import pytorch_lightning as pl
+import torch
+import torch.nn.functional as F
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
-from pytorch_lightning.core.step_result import TrainResult, EvalResult
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
+from pytorch_lightning.core.step_result import EvalResult, TrainResult
 from pytorch_lightning.loggers import TensorBoardLogger
-from transformers.optimization import AdamW, get_linear_schedule_with_warmup
+from transformers.optimization import AdamW
 
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
@@ -111,17 +111,31 @@ class RecoSAPL(pl.LightningModule):
         no_decay = ["bias", "LayerNorm.bias", "LayerNorm.weight"]
         optimizer_grouped_parameters = [
             {
-                "params": [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
+                "params": [
+                    p for n, p in param_optimizer if not any(nd in n for nd in no_decay)
+                ],
                 "weight_decay": self.config.trainer.weight_decay,
             },
-            {"params": [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], "weight_decay": 0.0},
+            {
+                "params": [
+                    p for n, p in param_optimizer if any(nd in n for nd in no_decay)
+                ],
+                "weight_decay": 0.0,
+            },
         ]
-        t_total = self.len_train_dataloader // self.config.trainer.gradient_accumulation_steps * self.config.trainer.pl.max_epochs
-        optimizer = AdamW(optimizer_grouped_parameters, lr=self.config.trainer.lr, eps=1e-8)
-        lr_scheduler = get_linear_schedule_with_warmup(
-            optimizer,  num_warmup_steps=self.config.trainer.warmup_steps, num_training_steps=t_total
-        )
-        return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
+        return AdamW(optimizer_grouped_parameters, lr=self.config.trainer.lr, eps=1e-8)
+
+    # learning rate warm-up
+    def optimizer_step(self, current_epoch, batch_nb, optimizer, optimizer_idx, second_order_closure=None, on_tpu=False, using_native_amp=False, using_lbfgs=False):
+        # warm up lr
+        if self.trainer.global_step < float(self.config.trainer.warmup_steps):
+            lr_scale = min(1., float(self.trainer.global_step + 1) / float(self.config.trainer.warmup_steps))
+            for pg in optimizer.param_groups:
+                pg['lr'] = lr_scale * self.config.trainer.lr
+
+        # update params
+        optimizer.step()
+        optimizer.zero_grad()
 
     def test_step(self, batch, batch_idx):
         ctx, _, target = batch

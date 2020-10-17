@@ -4,7 +4,7 @@ pl:
     distributed_backend: ddp
     amp_level: O2
     amp_backend: native
-    max_epochs: 100
+    max_epochs: 300
 data:
     batch_size: 128
     num_workers: 4

@@ -11,7 +11,7 @@ import pytorch_lightning as pl
 
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
-from src.metric import bleuS_4, bleuS_2
+from src.metric import bleuS_2, bleuS_4
 from src.utils.prepare import build
 from train import RecoSAPL
 
