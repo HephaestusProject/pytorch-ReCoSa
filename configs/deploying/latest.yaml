@@ -2,6 +2,6 @@ username: soeque1
 registry: docker.pkg.github.com
 owner: hephaestusproject
 repository: pytorch-recosa
-image_name: recosa-server-v0.2.2
-app_label: recosa-ubuntu-v0.2.2
-helm_release_name: recosa-v0.2.2
+image_name: recosa-server-v0.2.3
+app_label: recosa-ubuntu-v0.2.3
+helm_release_name: recosa-v0.2.3
