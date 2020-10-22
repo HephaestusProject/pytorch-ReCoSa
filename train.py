@@ -11,14 +11,13 @@ import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import LearningRateLogger, ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
-from torch.optim import Adam
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from transformers.optimization import AdamW
 
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
-from src.metric import bleuS
+from src.metric import bleuS_4
 from src.model.net import ReCoSA
 from src.utils.prepare import build
 
@@ -27,13 +26,15 @@ logging.basicConfig(level=logging.INFO)
 
 
 class RecoSAPL(pl.LightningModule):
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, len_train_dataloader: int = None) -> None:
         super().__init__()
         self.config = config
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = ReCoSA(config=self.config, _device=self._device)
+        self.model = ReCoSA(config=self.config.model, _device=self._device)
         self.pred = []
         self.target = []
+        self.len_train_dataloader = len_train_dataloader
+        self.lr_scale = 1.0
 
     def forward(self, x):
         return self.model.forward()
@@ -54,16 +55,23 @@ class RecoSAPL(pl.LightningModule):
             pred, target, ignore_index=self.model.tokenizer.pad_token_id
         )
         ppl = torch.exp(loss)
-        result = pl.TrainResult(minimize=loss)
-        result.log_dict(
-            {"tr_loss": loss, "tr_ppl": ppl},
-            prog_bar=True,
+        self.log(
+            "lr",
+            self.lr_scale * self.config.trainer.lr,
+            on_step=True,
+            on_epoch=False,
+            prog_bar=False,
             logger=True,
-            on_epoch=True,
-            on_step=False,
-            sync_dist=True,
         )
-        return result
+        self.log_dict(
+            {"tr_loss": loss, "tr_ppl": ppl},
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+            logger=True,
+        )
+        return loss
 
     def validation_step(self, batch, batch_idx):
         ctx, response, target = batch
@@ -72,8 +80,6 @@ class RecoSAPL(pl.LightningModule):
             pred, target, ignore_index=self.model.tokenizer.pad_token_id
         )
         ppl = torch.exp(loss)
-        result = pl.EvalResult(checkpoint_on=loss)
-
         if batch_idx % 100 == 0:
             pred_sen = torch.argmax(pred, dim=1)
             pred_sentence = [
@@ -94,29 +100,62 @@ class RecoSAPL(pl.LightningModule):
             logger.info("pred: " + " ".join(pred_sentence[0]))
             logger.info("target: " + " ".join(target_sentence[0]))
 
-        result.log_dict(
+        self.log_dict(
             {"val_loss": loss, "val_ppl": ppl},
-            prog_bar=True,
-            logger=True,
             on_step=False,
             on_epoch=True,
+            prog_bar=True,
             sync_dist=True,
+            logger=True,
         )
-        return result
+        return loss
 
     def configure_optimizers(self):
-        optimizer = Adam(params=self.model.parameters(), lr=1e-5)
-        lr_scheduler = ReduceLROnPlateau(
-            optimizer, patience=10, factor=0.9, verbose=True
-        )
-        # reduce every epoch (default)
-        scheduler = {
-            "scheduler": lr_scheduler,
-            "reduce_on_plateau": True,
-            # val_checkpoint_on is val_loss passed in as checkpoint_on
-            "monitor": "val_checkpoint_on",
-        }
-        return [optimizer], [scheduler]
+        # https://github.com/huggingface/transformers/blob/a75c64d80c76c3dc71f735d9197a4a601847e0cd/examples/contrib/run_openai_gpt.py
+        param_optimizer = list(self.model.named_parameters())
+        no_decay = ["bias", "LayerNorm.bias", "LayerNorm.weight"]
+        optimizer_grouped_parameters = [
+            {
+                "params": [
+                    p for n, p in param_optimizer if not any(nd in n for nd in no_decay)
+                ],
+                "weight_decay": self.config.trainer.weight_decay,
+            },
+            {
+                "params": [
+                    p for n, p in param_optimizer if any(nd in n for nd in no_decay)
+                ],
+                "weight_decay": 0.0,
+            },
+        ]
+        return AdamW(optimizer_grouped_parameters, lr=self.config.trainer.lr, eps=1e-8)
+
+    def optimizer_step(
+        self,
+        current_epoch,
+        batch_nb,
+        optimizer,
+        optimizer_idx,
+        second_order_closure=None,
+        on_tpu=False,
+        using_native_amp=False,
+        using_lbfgs=False,
+    ):
+        # warm up lr
+        if self.trainer.global_step < float(self.config.trainer.warmup_steps):
+            self.lr_scale = min(
+                1.0,
+                float(self.trainer.global_step + 1)
+                / float(self.config.trainer.warmup_steps),
+            )
+            for pg in optimizer.param_groups:
+                pg["lr"] = self.lr_scale * self.config.trainer.lr
+        else:
+            self.lr_scale = 1.0
+
+        # update params
+        optimizer.step()
+        optimizer.zero_grad()
 
     def test_step(self, batch, batch_idx):
         ctx, _, target = batch
@@ -125,7 +164,6 @@ class RecoSAPL(pl.LightningModule):
             pred, target, ignore_index=self.model.tokenizer.pad_token_id
         )
         ppl = torch.exp(loss)
-        result = pl.EvalResult(checkpoint_on=loss)
         pred_sentence = [
             self.model.tokenizer.decode(i)
             .split(self.model.tokenizer.eos_token)[0]
@@ -143,7 +181,7 @@ class RecoSAPL(pl.LightningModule):
         target_sentence_list = [[i] for i in target_sentence]
         self.pred.extend(pred_sentence)
         self.target.extend(target_sentence_list)
-        bleu_score = bleuS(pred_sentence, target_sentence_list).to(ppl.device)
+        bleu_score = bleuS_4(pred_sentence, target_sentence_list).to(ppl.device)
 
         if batch_idx % 10 == 0:
             logger.info("idx: " + str(batch_idx))
@@ -156,15 +194,15 @@ class RecoSAPL(pl.LightningModule):
             logger.info("pred: " + " ".join(pred_sentence[0]))
             logger.info("target: " + " ".join(target_sentence[0]))
 
-        result.log_dict(
+        self.log_dict(
             {"val_loss_gen": loss, "val_ppl_gen": ppl, "val_bleu_gen": bleu_score},
-            prog_bar=True,
-            logger=True,
             on_step=False,
             on_epoch=True,
+            prog_bar=True,
             sync_dist=True,
+            logger=True,
         )
-        return result
+        return loss
 
 
 def main(
@@ -222,13 +260,11 @@ def main(
         verbose=True,
     )
 
-    model = RecoSAPL(cfg.model)
-    lr_logger = LearningRateLogger(logging_interval="step")
+    model = RecoSAPL(cfg, len(train_data))
     trainer = pl.Trainer(
         **cfg.trainer.pl,
         logger=logger,
         checkpoint_callback=checkpoint_callback,
-        callbacks=[lr_logger],
     )
     trainer.fit(model, train_dataloader, val_dataloader)
 

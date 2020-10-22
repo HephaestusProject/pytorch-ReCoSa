@@ -29,7 +29,7 @@ class TestReCoSa(unittest.TestCase):
             **self.config.trainer.data,
             collate_fn=collate,
         )
-        self.model = RecoSAPL(self.config.model)
+        self.model = RecoSAPL(self.config, len(self.data))
         self.trainer = pl.Trainer(**self.config.trainer.pl)
 
     def test_trainer(self):

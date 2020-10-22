@@ -27,7 +27,7 @@ class TestReCoSaAPI(unittest.TestCase):
         response = self.client.post("/model", json=body)
         assert response.status_code == 200
         assert response.json() == {
-            "prediction": "yeah, but I'm not sure if it's a good idea. "
+            "prediction": "i'm not sure, but it's not a good idea. "
         }
 
 

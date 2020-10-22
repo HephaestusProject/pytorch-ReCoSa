@@ -7,13 +7,13 @@
 
 * ReCoSA is able to detect relevant contexts and produce a suitable response accordingly. Firstly, a word level LSTM encoder is conducted to obtain the initial representation of each context. Then, the self-attention mechanism is utilized to update both the context and masked response representation. Finally, the attention weights between each context and response representations are computed and used in the further decoding process.
 
-## Table
+## Table (v0.2.4)
 
 * DSTC7_AVSD
 
 | PPL   |      BLEU(4-grams)    | BLEU(2-grams)      |
 |----------|:-------------:|:-------------:|
-| 124.72 |  0.106 | 0.223
+| 105.34 |  0.099 | 0.214
 
 ## Training history
 
@@ -35,16 +35,9 @@
 
 ### Training & Evaluate
 
-* interface
-  + ArgumentParser의 command가 code block 형태로 들어가야함.
-    - single-gpu, multi-gpu
-
-### Inference
-
-* interface
-  + ArgumentParser의 command가 code block 형태로 들어가야함.
-
-### Evaluate
+```sh
+./train.sh
+```
 
 ```sh
 ./evaluate.sh
@@ -52,22 +45,71 @@
 
 ### Project structure
 
-```
+```sh
 .
+├── Dockerfile
+├── LICENSE
+├── README.md
 ├── apply.sh
-├── conf
+|── conf
+│   ├── api
+│   │   ├── ReCoSa.yml
+│   │   └── ReCoSa_AVSD.yml
 │   ├── dataset
-│   │   └── ubuntu.yml
-│   └── model
-│       └── your_model.yml
+│   │   ├── DSTC7_AVSD.yml
+│   │   ├── ubuntu.yml
+│   │   └── ubuntu_test.yml
+│   ├── model
+│   │   ├── ReCoSa.yml
+│   │   └── ReCoSa_test.yml
+│   ├── tokenizer
+│   │   ├── added_tokens.json
+│   │   ├── merges.txt
+│   │   ├── special_tokens_map.json
+│   │   ├── tokenizer_config.json
+│   │   └── vocab.json
+│   └── trainer
+│       ├── ReCoSa.yml
+│       └── ReCoSa_test.yml
+├── configs
+│   └── deploying
+│       └── latest.yaml
+├── coverage.xml
 ├── data
+│   ├── DSTC7_AVSD
+│   │   ├── dial.dev
+│   │   ├── dial.test
+│   │   └── dial.train
+│   ├── DailyDialog
+│   │   ├── dial.test
+│   │   ├── dial.train
+│   │   └── dial.valid
+│   ├── PersonaChat
+│   │   ├── dial.test
+│   │   ├── dial.train
+│   │   └── dial.valid
 │   └── Ubuntu
 │       ├── LICENSE
 │       ├── test.csv
 │       ├── train.csv
 │       └── valid.csv
+├── deploying
+│   └── helm
+│       ├── Chart.yaml
+│       ├── templates
+│       │   ├── deployment.yaml
+│       │   └── service.yaml
+│       └── values.yaml
 ├── evaluate.py
+├── evaluate.sh
 ├── infer.py
+├── lightning_logs
+├── requirements.txt
+├── server.Dockerfile
+├── serving
+│   ├── __init__.py
+│   └── app_factory.py
+├── serving
 ├── LICENSE
 ├── README.md
 ├── requirements.txt
@@ -83,9 +125,18 @@
 │   │   └── prepare.py
 │   └── utils.py
 ├── tests
+│   ├── resources
+│   │   └── Ubuntu
+│   │       └── sample.csv
 │   ├── __init__.py
-│   └── test_download.py
-└── train.py
+│   ├── test_api.py
+│   ├── test_data.py
+│   ├── test_download.py
+│   ├── test_inference.py
+│   ├── test_model.py
+│   └── test_trainer.py
+├── train.py
+└── train.sh
 ```
 
 ### License

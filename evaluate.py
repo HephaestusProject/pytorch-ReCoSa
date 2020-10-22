@@ -11,7 +11,7 @@ import pytorch_lightning as pl
 
 from src.core.build_data import Config
 from src.data import UbuntuDataLoader, UbuntuDataSet, collate
-from src.metric import bleuS
+from src.metric import bleuS_2, bleuS_4
 from src.utils.prepare import build
 from train import RecoSAPL
 
@@ -51,14 +51,18 @@ def main(
         collate_fn=collate,
     )
 
-    model = RecoSAPL.load_from_checkpoint(cfg.api.model_path, **cfg.model)
+    model = RecoSAPL.load_from_checkpoint(
+        checkpoint_path=cfg.api.model_path, config=cfg
+    )
     cfg.trainer.pl.max_epochs = 1
 
     trainer = pl.Trainer(**cfg.trainer.pl, logger=False, checkpoint_callback=False)
     test_result = trainer.test(model, test_dataloaders=val_dataloader)
     logger.info(test_result)
-    bleu_score = bleuS(model.pred, model.target)
-    logger.info(bleu_score)
+    bleu_score_4 = bleuS_4(model.pred, model.target)
+    bleu_score_2 = bleuS_2(model.pred, model.target)
+    logger.info(bleu_score_4)
+    logger.info(bleu_score_2)
 
 
 if __name__ == "__main__":

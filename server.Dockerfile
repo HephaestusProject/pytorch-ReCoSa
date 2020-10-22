@@ -15,9 +15,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 RUN mkdir -p exp/Ubuntu/ \
     && cd exp/Ubuntu/ \
-    && wget https://github.com/HephaestusProject/pytorch-ReCoSa/releases/download/v0.2.2-nightly/v0.2.2.tar.gz \
-    && tar zxvf v0.2.2.tar.gz \
-    && rm -rf v0.2.2.tar.gz \
+    && wget https://github.com/HephaestusProject/pytorch-ReCoSa/releases/download/v0.2.3-nightly/v0.2.3.tar.gz \
+    && tar zxvf v0.2.3.tar.gz \
+    && rm -rf v0.2.3.tar.gz \
     && cd ../..
 
 COPY . .
