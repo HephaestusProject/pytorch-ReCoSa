@@ -3,7 +3,7 @@ mypy
 omegaconf==2.0.2
 pytest
 pytorch-lightning==1.0.2
-pyyaml==5.3.1
+pyyaml==5.4
 requests
 torch==1.6.0
 transformers==3.0.2
